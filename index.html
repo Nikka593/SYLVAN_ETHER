@@ -3,17 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AETHERIAL SANCTUM | The Source Code of Nature</title>
+    <title>AETHERIAL SANCTUM | Cycle of Genesis</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;900&family=Cormorant+Garamond:ital,wght@0,300;0,600;1,400&family=Zen+Old+Mincho:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        /* === DEEP AESTHETICS === */
+        /* === DYNAMIC AESTHETICS === */
         :root {
             --void: #010409;
-            --ether-teal: #2dd4bf;
-            --ether-gold: #fcd34d;
-            --ether-magenta: #d946ef;
+            --chaos: #2a0a0a;
+            --genesis: #fffbeb;
+            
+            --c-sanctum: #2dd4bf; /* Teal */
+            --c-chaos: #ef4444;   /* Red */
+            --c-genesis: #fbbf24; /* Gold */
+
             --f-header: 'Cinzel Decorative', serif;
             --f-body: 'Cormorant Garamond', serif;
         }
@@ -23,21 +27,37 @@
             background-color: var(--void);
             color: #e2e8f0;
             overflow: hidden;
-            cursor: none; /* OSカーソル消去 */
+            cursor: none;
+            transition: background-color 2s ease;
         }
+
+        /* Phase Classes for Body */
+        body.phase-chaos { background-color: var(--chaos); }
+        body.phase-genesis { background-color: #000; } /* Deep darkness before light */
 
         /* === CANVAS LAYERS === */
         #sanctum-canvas {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             z-index: 1;
         }
+        
+        /* Glitch Overlay for Chaos Phase */
+        #glitch-layer {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: transparent;
+            z-index: 5; pointer-events: none;
+            opacity: 0;
+            mix-blend-mode: overlay;
+        }
 
-        /* === UI OVERLAY with Glassmorphism === */
+        /* === UI OVERLAY === */
         #ui-layer {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             z-index: 10; pointer-events: none;
             display: flex; justify-content: center; align-items: center;
+            transition: opacity 0.5s;
         }
+        body.phase-genesis #ui-layer { opacity: 0; } /* Hide UI in Genesis to focus on visuals */
 
         /* === CONTENT CARD === */
         .artifact-card {
@@ -54,20 +74,22 @@
             overflow: hidden;
         }
 
-        .artifact-card.active {
-            opacity: 1; transform: scale(1);
-        }
+        .artifact-card.active { opacity: 1; transform: scale(1); }
 
-        /* Magic Border Animation */
+        /* Magic Border Animation - Dynamic Color */
         .artifact-card::after {
             content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             border: 1px solid transparent;
-            background: linear-gradient(135deg, rgba(45, 212, 191, 0.3), transparent 40%, rgba(217, 70, 239, 0.3)) border-box;
+            background: linear-gradient(135deg, var(--c-sanctum), transparent 40%, var(--c-genesis)) border-box;
             -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
             mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
             -webkit-mask-composite: xor;
             mask-composite: exclude;
             pointer-events: none;
+            transition: background 1s;
+        }
+        body.phase-chaos .artifact-card::after {
+            background: linear-gradient(135deg, var(--c-chaos), transparent 40%, #000) border-box;
         }
 
         /* === TYPOGRAPHY === */
@@ -79,16 +101,31 @@
 
         h1 {
             font-family: var(--f-header); font-size: 5.5rem; line-height: 0.9;
-            background: linear-gradient(to right, #fff, var(--ether-teal));
+            background: linear-gradient(to right, #fff, var(--c-sanctum));
             -webkit-background-clip: text; color: transparent;
             margin-bottom: 2rem;
             filter: drop-shadow(0 0 20px rgba(45, 212, 191, 0.4));
             mix-blend-mode: overlay;
+            transition: all 0.5s;
+        }
+        body.phase-chaos h1 {
+            background: linear-gradient(to right, #fff, var(--c-chaos));
+            -webkit-background-clip: text;
+            filter: drop-shadow(0 0 10px var(--c-chaos)) blur(2px);
+            animation: text-shudder 0.1s infinite;
+        }
+        
+        @keyframes text-shudder {
+            0% { transform: translate(0,0); }
+            25% { transform: translate(2px, 2px); }
+            50% { transform: translate(-2px, -2px); }
+            75% { transform: translate(2px, -2px); }
+            100% { transform: translate(0,0); }
         }
         
         h2 {
             font-family: var(--f-body); font-style: italic; font-size: 1.5rem;
-            color: var(--ether-gold); letter-spacing: 4px; margin-bottom: 1rem;
+            color: var(--c-genesis); letter-spacing: 4px; margin-bottom: 1rem;
             text-transform: uppercase;
         }
 
@@ -102,15 +139,13 @@
         .aether-btn {
             margin-top: 40px;
             font-family: var(--f-header); font-size: 1.2rem; letter-spacing: 3px;
-            color: var(--ether-teal);
+            color: var(--c-sanctum);
             border: 1px solid rgba(45, 212, 191, 0.3);
             padding: 20px 50px;
             background: linear-gradient(90deg, transparent, rgba(45, 212, 191, 0.05), transparent);
             cursor: none;
             transition: all 0.5s;
-            position: relative;
-            overflow: hidden;
-            width: fit-content;
+            position: relative; overflow: hidden; width: fit-content;
         }
         
         .aether-btn::before {
@@ -120,11 +155,18 @@
         }
         
         .aether-btn:hover {
-            border-color: var(--ether-teal);
+            border-color: var(--c-sanctum);
             box-shadow: 0 0 30px rgba(45, 212, 191, 0.2);
-            text-shadow: 0 0 10px var(--ether-teal);
+            text-shadow: 0 0 10px var(--c-sanctum);
         }
         .aether-btn:hover::before { left: 100%; }
+
+        /* Dynamic Button Styles */
+        body.phase-chaos .aether-btn {
+            color: var(--c-chaos); border-color: var(--c-chaos);
+            animation: shake 0.5s infinite;
+        }
+        @keyframes shake { 0% { transform: translate(1px, 1px) rotate(0deg); } 10% { transform: translate(-1px, -2px) rotate(-1deg); } 20% { transform: translate(-3px, 0px) rotate(1deg); } 30% { transform: translate(3px, 2px) rotate(0deg); } 40% { transform: translate(1px, -1px) rotate(1deg); } 50% { transform: translate(-1px, 2px) rotate(-1deg); } 60% { transform: translate(-3px, 1px) rotate(0deg); } 70% { transform: translate(3px, 1px) rotate(-1deg); } 80% { transform: translate(-1px, -1px) rotate(1deg); } 90% { transform: translate(1px, 2px) rotate(0deg); } 100% { transform: translate(1px, -2px) rotate(-1deg); } }
 
         /* === VISUAL SIDE === */
         .visual-side {
@@ -140,11 +182,15 @@
             display: flex; align-items: center; justify-content: center;
             animation: rotate-slow 60s linear infinite;
         }
+        body.phase-chaos .glyph-ring { border-color: var(--c-chaos); animation-duration: 2s; animation-direction: reverse; }
+        body.phase-genesis .glyph-ring { border-color: var(--c-genesis); box-shadow: 0 0 50px var(--c-genesis); animation-duration: 120s; }
+
         .glyph-inner {
             width: 70%; height: 70%;
             border: 1px dashed rgba(45, 212, 191, 0.3);
             transform: rotate(45deg);
         }
+        body.phase-chaos .glyph-inner { border-color: var(--c-chaos); border-style: solid; }
 
         @keyframes rotate-slow { 100% { transform: rotate(360deg); } }
 
@@ -165,22 +211,62 @@
             transition: width 0.3s, height 0.3s, border-color 0.3s;
         }
 
-        body.active-hold #cursor-core { transform: translate(-50%, -50%) scale(3); background: var(--ether-gold); }
-        body.active-hold #cursor-aura { width: 100px; height: 100px; border-color: var(--ether-magenta); border-width: 2px; animation: pulse-fast 0.5s infinite; }
+        body.active-hold #cursor-core { transform: translate(-50%, -50%) scale(3); background: var(--c-genesis); }
+        body.active-hold #cursor-aura { width: 100px; height: 100px; border-color: var(--c-genesis); border-width: 2px; animation: pulse-fast 0.5s infinite; }
+        
+        body.phase-chaos #cursor-core { background: var(--c-chaos); }
+        body.phase-chaos #cursor-aura { border-color: var(--c-chaos); border-style: dashed; }
 
         @keyframes pulse-fast { 0% { opacity: 0.5; transform: translate(-50%, -50%) scale(1); } 100% { opacity: 0; transform: translate(-50%, -50%) scale(1.5); } }
 
-        /* HUD */
+        /* HUD & WARNINGS */
         .hud-info {
             position: fixed; bottom: 30px; left: 30px; z-index: 20;
             font-family: var(--f-header); font-size: 0.8rem; color: rgba(255,255,255,0.3);
             pointer-events: none; letter-spacing: 2px;
         }
+
+        #warning-msg {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            font-family: var(--f-header); font-size: 5rem; color: var(--c-chaos);
+            z-index: 100; pointer-events: none; text-align: center;
+            opacity: 0; letter-spacing: 10px;
+            mix-blend-mode: difference;
+        }
+        body.phase-chaos #warning-msg { opacity: 1; animation: glitch-text 0.2s infinite; }
+
+        @keyframes glitch-text {
+            0% { clip-path: inset(10% 0 80% 0); transform: translate(-50%, -50%) skew(10deg); }
+            20% { clip-path: inset(80% 0 10% 0); transform: translate(-52%, -50%) skew(-10deg); }
+            40% { clip-path: inset(40% 0 40% 0); transform: translate(-48%, -50%) skew(5deg); }
+            100% { clip-path: inset(0 0 0 0); transform: translate(-50%, -50%); }
+        }
+
+        #genesis-msg {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            font-family: var(--f-header); font-size: 4rem; color: #fff;
+            z-index: 100; pointer-events: none; text-align: center;
+            opacity: 0; letter-spacing: 5px; text-shadow: 0 0 30px var(--c-genesis);
+            transition: opacity 2s;
+        }
+        body.phase-genesis #genesis-msg { opacity: 1; }
+
+        /* Charge Bar */
+        .charge-container {
+            position: fixed; bottom: 0; left: 0; width: 100%; height: 4px; z-index: 100;
+        }
+        .charge-fill {
+            height: 100%; background: linear-gradient(90deg, var(--c-sanctum), var(--c-genesis));
+            width: 0%; transition: width 0.1s linear;
+        }
+        body.phase-chaos .charge-fill { background: var(--c-chaos); box-shadow: 0 0 20px var(--c-chaos); }
+
     </style>
 </head>
 <body>
 
     <canvas id="sanctum-canvas"></canvas>
+    <div id="glitch-layer"></div>
 
     <div id="cursor-core"></div>
     <div id="cursor-aura"></div>
@@ -188,18 +274,18 @@
     <div id="ui-layer">
         <div class="artifact-card active" id="main-card">
             <div class="hero-text">
-                <h2>The Final Frontier</h2>
+                <h2>The Cycle of Being</h2>
                 <h1>AETHERIAL<br>SANCTUM</h1>
-                <p>
-                    ここは、コードと自然が交差する特異点。<br>
-                    マウスを動かし「流体」を乱してください。<br>
-                    クリックで「フラクタル」を植えてください。<br>
-                    長押しで「次元」を歪めてください。<br>
+                <p id="desc-text">
+                    [PHASE I: STABILITY]<br>
+                    秩序ある世界。流体は静かに流れ、生命は育まれます。<br>
+                    しかし、過剰なエネルギー（長押し）は均衡を崩します。<br>
                     <br>
-                    あなたの意志が、この世界の物理法則です。
+                    <span style="color:var(--c-chaos)">警告：10秒以上の接続は、不可逆的な崩壊を招きます。</span><br>
+                    それでも、その先に希望を見るのなら……。
                 </p>
-                <button class="aether-btn" onmousedown="startCharge()" onmouseup="endCharge()" onmouseleave="endCharge()">
-                    INITIATE SEQUENCE
+                <button class="aether-btn" onmousedown="startCharge()" onmouseup="endCharge()" onmouseleave="endCharge()" ontouchstart="startCharge()" ontouchend="endCharge()">
+                    HOLD TO TRANSCEND
                 </button>
             </div>
             <div class="visual-side">
@@ -207,33 +293,54 @@
                     <div class="glyph-inner"></div>
                 </div>
                 <div style="position: absolute; bottom: 20px; right: 20px; font-family: var(--f-header); opacity: 0.5; writing-mode: vertical-rl;">
-                    SYS.GENESIS.VER.3.0
+                    SYS.MONITORING...
                 </div>
             </div>
         </div>
     </div>
 
     <div class="hud-info">
-        INTERACTION: FLUID / FRACTAL / WARP<br>
-        FPS: <span id="fps-counter">60</span>
+        STATUS: <span id="status-text">STABLE</span><br>
+        ENTROPY: <span id="entropy-val">0.00</span>%
     </div>
+
+    <div class="charge-container"><div class="charge-fill" id="charge-bar"></div></div>
+    
+    <div id="warning-msg">SYSTEM FAILURE</div>
+    <div id="genesis-msg">A NEW DAWN</div>
 
     <script>
         /**
-         * AETHERIAL ENGINE v1.0
-         * Core Concepts: Fluid Dynamics, Recursive fractals, Particle Systems
+         * AETHERIAL ENGINE v2.0 - "The Cataclysm Update"
+         * Implements State Machine for Stability -> Chaos -> Genesis
          */
 
         const canvas = document.getElementById('sanctum-canvas');
-        const ctx = canvas.getContext('2d', { alpha: false }); // Optimize
+        const ctx = canvas.getContext('2d', { alpha: false });
         let width, height;
 
-        const cursor = { x: 0, y: 0, px: 0, py: 0, down: false, charge: 0 };
-        const config = {
-            particleCount: 2000,
+        // STATE DEFINITIONS
+        const STATES = {
+            SANCTUM: 0,
+            CHAOS: 1,
+            GENESIS: 2
+        };
+
+        const cursor = { x: 0, y: 0, px: 0, py: 0, down: false };
+        
+        // System Config
+        const sys = {
+            state: STATES.SANCTUM,
+            chargeTime: 0,      // Current charge in frames
+            chaosThreshold: 600, // 10 seconds at 60fps
+            genesisThreshold: 1200, // 20 seconds
+            
+            // Visual Params
+            bgColor: { h: 220, s: 20, l: 5 },
             fluidViscosity: 0.98,
-            fractalDepth: 9,
-            colorShift: 0
+            fractalColor: { h: 160, s: 80, l: 60 },
+            shake: 0,
+            timeSpeed: 1.0
         };
 
         // --- RESIZE HANDLER ---
@@ -249,70 +356,119 @@
             cursor.px = cursor.x; cursor.py = cursor.y;
             cursor.x = e.clientX; cursor.y = e.clientY;
             
-            // Cursor Visuals
             const core = document.getElementById('cursor-core');
             const aura = document.getElementById('cursor-aura');
             core.style.left = aura.style.left = e.clientX + 'px';
             core.style.top = aura.style.top = e.clientY + 'px';
 
-            // Add Force to Fluid
-            addForce(cursor.x, cursor.y, (cursor.x - cursor.px) * 2, (cursor.y - cursor.py) * 2);
+            // Add force (Force depends on state)
+            let forceMult = (sys.state === STATES.CHAOS) ? 5 : 2; 
+            addForce(cursor.x, cursor.y, (cursor.x - cursor.px) * forceMult, (cursor.y - cursor.py) * forceMult);
         });
 
-        document.addEventListener('mousedown', e => {
-            cursor.down = true;
-            document.body.classList.add('active-hold');
-            spawnFractal(e.clientX, e.clientY);
-        });
-        document.addEventListener('mouseup', () => {
-            cursor.down = false;
-            document.body.classList.remove('active-hold');
-        });
-
-        // --- FLUID & PARTICLE SYSTEM ---
+        // --- FLUID SYSTEM ---
         let particles = [];
         let grid = [];
-        const gridSize = 40; // Resolution of fluid grid
+        const gridSize = 40;
         let cols, rows;
 
         class Particle {
-            constructor() {
+            constructor(isGenesis = false) {
+                this.init(isGenesis);
+            }
+            
+            init(isGenesis) {
                 this.x = Math.random() * width;
                 this.y = Math.random() * height;
                 this.vx = 0; this.vy = 0;
                 this.age = Math.random() * 100;
-                this.life = 100 + Math.random() * 100;
+                this.hue = Math.random() * 60 + 160; 
                 this.size = Math.random() * 2;
-                this.hue = Math.random() * 60 + 160; // Teal/Blue base
+                this.type = 'NORMAL'; 
+                
+                if(isGenesis) {
+                    this.x = width/2; this.y = height/2; // Explosion from center
+                    const ang = Math.random() * Math.PI * 2;
+                    const speed = Math.random() * 20;
+                    this.vx = Math.cos(ang) * speed;
+                    this.vy = Math.sin(ang) * speed;
+                    this.hue = Math.random() * 360; // Rainbow
+                    this.type = 'GENESIS';
+                }
             }
+
             update() {
-                // Get fluid force from grid
+                // 1. Grid Interaction (Fluid Dynamics)
                 const gx = Math.floor(this.x / gridSize);
                 const gy = Math.floor(this.y / gridSize);
                 
                 if (gx >= 0 && gx < cols && gy >= 0 && gy < rows) {
                     const cell = grid[gx + gy * cols];
-                    this.vx += cell.ax * 0.5; // Apply acceleration
+                    this.vx += cell.ax * 0.5;
                     this.vy += cell.ay * 0.5;
                 }
 
-                // Friction & Movement
-                this.vx *= 0.96; this.vy *= 0.96;
+                // 2. State-Based Behavior
+                if(sys.state === STATES.SANCTUM) {
+                    this.vx *= 0.96; this.vy *= 0.96;
+                    this.hue = 160 + (Math.sin(this.age * 0.05) * 30); // Teal Pulse
+                } 
+                else if(sys.state === STATES.CHAOS) {
+                    this.vx *= 1.02; this.vy *= 1.02; // Accelerate (Explode)
+                    this.vx += (Math.random()-0.5) * 2; // Jitter
+                    this.vy += (Math.random()-0.5) * 2;
+                    this.hue = (Math.random() < 0.1) ? 0 : 360; // Red or Black
+                }
+                else if(sys.state === STATES.GENESIS) {
+                    // Spiral Order
+                    const dx = width/2 - this.x;
+                    const dy = height/2 - this.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    
+                    // Orbit force
+                    this.vx += dy * 0.001;
+                    this.vy -= dx * 0.001;
+                    // Attraction
+                    this.vx += dx * 0.0005;
+                    this.vy += dy * 0.0005;
+                    
+                    this.vx *= 0.98; this.vy *= 0.98;
+                    this.hue = (this.age * 2) % 360; // Rainbow Cycle
+                }
+
                 this.x += this.vx; this.y += this.vy;
 
-                // Wrap around screen
+                // 3. Boundary Wrap
                 if(this.x < 0) this.x = width; if(this.x > width) this.x = 0;
                 if(this.y < 0) this.y = height; if(this.y > height) this.y = 0;
 
-                // Color shift based on charge
-                this.hue = 160 + config.colorShift + (Math.sin(this.age * 0.05) * 30);
                 this.age++;
             }
+
             draw() {
                 const speed = Math.sqrt(this.vx*this.vx + this.vy*this.vy);
-                ctx.fillStyle = `hsla(${this.hue}, 80%, 60%, ${Math.min(1, speed * 0.5 + 0.1)})`;
+                let alpha = Math.min(1, speed * 0.5 + 0.1);
+                let size = this.size * (1 + speed/2);
+                
+                if(sys.state === STATES.CHAOS) {
+                    // Glitchy rectangles
+                    if(Math.random() < 0.2) {
+                        ctx.fillStyle = '#f00';
+                        ctx.fillRect(this.x, this.y, size*4, 2);
+                        return;
+                    }
+                }
+                
+                if(sys.state === STATES.GENESIS) {
+                    ctx.fillStyle = `hsla(${this.hue}, 100%, 70%, ${alpha})`;
+                    ctx.shadowBlur = 10; ctx.shadowColor = ctx.fillStyle;
+                } else {
+                    ctx.fillStyle = `hsla(${this.hue}, 80%, 60%, ${alpha})`;
+                    ctx.shadowBlur = 0;
+                }
+
                 ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size * (1 + speed/2), 0, Math.PI * 2);
+                ctx.arc(this.x, this.y, size, 0, Math.PI * 2);
                 ctx.fill();
             }
         }
@@ -322,27 +478,25 @@
             rows = Math.ceil(height / gridSize);
             grid = new Array(cols * rows).fill(0).map(() => ({ ax: 0, ay: 0 }));
             particles = [];
-            for(let i=0; i<config.particleCount; i++) particles.push(new Particle());
+            for(let i=0; i<2000; i++) particles.push(new Particle());
         }
 
         function addForce(x, y, dx, dy) {
             const gx = Math.floor(x / gridSize);
             const gy = Math.floor(y / gridSize);
-            const range = 2; // Influence radius
-
+            const range = 2;
             for(let i = -range; i <= range; i++) {
                 for(let j = -range; j <= range; j++) {
                     const cx = gx + i; const cy = gy + j;
                     if(cx >= 0 && cx < cols && cy >= 0 && cy < rows) {
                         const cell = grid[cx + cy * cols];
-                        cell.ax += dx * 0.05;
-                        cell.ay += dy * 0.05;
+                        cell.ax += dx * 0.05; cell.ay += dy * 0.05;
                     }
                 }
             }
         }
 
-        // --- FRACTAL TREES (L-SYSTEM LOGIC) ---
+        // --- FRACTAL SYSTEM (With Life/Death) ---
         let fractals = [];
 
         class FractalTree {
@@ -350,14 +504,19 @@
                 this.x = x; this.y = y;
                 this.branches = [];
                 this.age = 0;
-                this.maxAge = 100;
-                this.color = `hsl(${Math.random()*60 + 40}, 100%, 70%)`; // Gold/Yellow
-                this.generate(x, y, -Math.PI/2, 80, config.fractalDepth);
+                this.dead = false;
+                this.burnt = false;
+                this.isGenesis = (sys.state === STATES.GENESIS);
+                
+                // Genesis Tree is huge
+                let startLen = this.isGenesis ? 150 : 80;
+                let startDepth = this.isGenesis ? 11 : 9;
+                
+                this.generate(x, y, -Math.PI/2, startLen, startDepth);
             }
 
             generate(x, y, angle, len, depth) {
                 if(depth === 0) return;
-                
                 const endX = x + Math.cos(angle) * len;
                 const endY = y + Math.sin(angle) * len;
                 
@@ -365,116 +524,197 @@
                     sx: x, sy: y, ex: endX, ey: endY,
                     depth: depth,
                     visible: false,
-                    delay: (config.fractalDepth - depth) * 5 // Staggered growth
+                    delay: (11 - depth) * 5,
+                    disintegrated: false // For Chaos
                 });
 
-                // Recursive branching
-                const spread = 0.5 + Math.random() * 0.3;
+                const spread = this.isGenesis ? 0.4 : (0.5 + Math.random() * 0.3);
                 this.generate(endX, endY, angle - spread, len * 0.7, depth - 1);
                 this.generate(endX, endY, angle + spread, len * 0.7, depth - 1);
             }
 
             update() {
                 this.age++;
+                
+                if(sys.state === STATES.CHAOS && !this.burnt) {
+                    this.burnt = true; // Mark as burning
+                }
+
                 this.branches.forEach(b => {
                     if(this.age > b.delay) b.visible = true;
+                    
+                    // Chaos disintegration logic
+                    if(sys.state === STATES.CHAOS) {
+                        if(Math.random() < 0.05) b.disintegrated = true;
+                    }
                 });
             }
 
             draw() {
-                ctx.strokeStyle = this.color;
-                ctx.lineCap = 'round';
-                
                 this.branches.forEach(b => {
-                    if(!b.visible) return;
-                    
-                    // Growth animation
+                    if(!b.visible || b.disintegrated) return;
+
                     const progress = Math.min(1, (this.age - b.delay) / 20);
                     const curX = b.sx + (b.ex - b.sx) * progress;
                     const curY = b.sy + (b.ey - b.sy) * progress;
 
-                    ctx.lineWidth = b.depth * 0.5;
-                    ctx.globalAlpha = progress * (b.depth / config.fractalDepth) + 0.2;
+                    ctx.lineWidth = b.depth * (this.isGenesis ? 0.8 : 0.5);
+                    
+                    // Color Logic
+                    if(sys.state === STATES.CHAOS) {
+                        ctx.strokeStyle = `rgba(${50 + Math.random()*50}, 0, 0, ${0.5 + Math.random()*0.5})`; // Burning Red/Black
+                        ctx.shadowBlur = 5; ctx.shadowColor = 'red';
+                    } else if (this.isGenesis) {
+                        // Rainbow Gold
+                        const hue = (this.age + b.depth * 20) % 360;
+                        ctx.strokeStyle = `hsla(${hue}, 80%, 70%, 0.8)`;
+                        ctx.shadowBlur = 10; ctx.shadowColor = `hsla(${hue}, 80%, 50%, 0.5)`;
+                    } else {
+                        // Normal Sanctum
+                        ctx.strokeStyle = `hsla(${160 - b.depth*5}, 80%, 70%, 0.5)`;
+                        ctx.shadowBlur = 0;
+                    }
+
                     ctx.beginPath();
                     ctx.moveTo(b.sx, b.sy);
-                    ctx.lineTo(curX, curY);
-                    ctx.stroke();
-
-                    // Glow at tips
-                    if(b.depth === 1 && progress > 0.9) {
-                        ctx.fillStyle = '#fff';
-                        ctx.beginPath();
-                        ctx.arc(curX, curY, 2, 0, Math.PI*2);
-                        ctx.fill();
+                    
+                    // Jitter lines in Chaos
+                    if(sys.state === STATES.CHAOS) {
+                         ctx.lineTo(curX + (Math.random()-0.5)*10, curY + (Math.random()-0.5)*10);
+                    } else {
+                        ctx.lineTo(curX, curY);
                     }
+                    ctx.stroke();
                 });
-                ctx.globalAlpha = 1.0;
             }
-        }
-
-        function spawnFractal(x, y) {
-            if(fractals.length > 5) fractals.shift(); // Limit count
-            fractals.push(new FractalTree(x, y));
-            // Add explosive force to fluid
-            for(let i=0; i<360; i+=10) {
-                const rad = i * Math.PI / 180;
-                addForce(x, y, Math.cos(rad)*50, Math.sin(rad)*50);
-            }
-        }
-
-        // --- MAIN LOOP ---
-        let lastTime = 0;
-        function animate(time) {
-            // Calculate FPS
-            const dt = time - lastTime;
-            lastTime = time;
-            if(Math.random() > 0.95) document.getElementById('fps-counter').innerText = Math.round(1000/dt);
-
-            // Warp Charge Logic
-            if(cursor.down) {
-                config.colorShift += 2;
-                cursor.charge = Math.min(100, cursor.charge + 1);
-                // Shake effect
-                ctx.setTransform(1,0,0,1, (Math.random()-0.5)*cursor.charge*0.1, (Math.random()-0.5)*cursor.charge*0.1);
-            } else {
-                config.colorShift *= 0.95; // Decay
-                cursor.charge *= 0.9;
-                ctx.setTransform(1,0,0,1,0,0);
-            }
-
-            // Fade Effect (Trails)
-            ctx.fillStyle = `rgba(1, 4, 9, ${0.2 - cursor.charge*0.001})`; // Dark void background
-            ctx.fillRect(0, 0, width, height);
-
-            // Update Fluid Grid (Decay)
-            for(let i=0; i<grid.length; i++) {
-                grid[i].ax *= config.fluidViscosity;
-                grid[i].ay *= config.fluidViscosity;
-            }
-
-            // Render Systems
-            ctx.globalCompositeOperation = 'screen'; // Additive Blending for Magic Glow
-            
-            particles.forEach(p => { p.update(); p.draw(); });
-            
-            // Render Fractals
-            fractals.forEach(f => { f.update(); f.draw(); });
-
-            // Post-processing Glow (Pseudo)
-            // Note: True Gaussian blur is too heavy, simulating with layered circles or just alpha blending
-            
-            ctx.globalCompositeOperation = 'source-over'; // Reset
-            requestAnimationFrame(animate);
         }
 
         // --- BUTTON ACTIONS ---
-        function startCharge() { cursor.down = true; document.body.classList.add('active-hold'); }
-        function endCharge() { cursor.down = false; document.body.classList.remove('active-hold'); }
+        function startCharge() { 
+            cursor.down = true; 
+            document.body.classList.add('active-hold'); 
+            // Spawn normal fractal if in stable state
+            if(sys.state === STATES.SANCTUM) spawnFractal(cursor.x, cursor.y);
+        }
+        
+        function endCharge() { 
+            cursor.down = false; 
+            document.body.classList.remove('active-hold');
+            
+            // If released during Chaos, reset to Sanctum (Mercy)
+            if(sys.state === STATES.CHAOS) {
+                resetWorld();
+            }
+            // If released during Sanctum, just drain charge
+        }
 
-        // Start
+        function spawnFractal(x, y) {
+            if(fractals.length > 5) fractals.shift();
+            fractals.push(new FractalTree(x, y));
+        }
+
+        function resetWorld() {
+            sys.state = STATES.SANCTUM;
+            sys.chargeTime = 0;
+            fractals = [];
+            initFluid();
+            document.body.classList.remove('phase-chaos', 'phase-genesis');
+            document.getElementById('status-text').innerText = "STABLE";
+            document.getElementById('desc-text').innerHTML = "[SYSTEM REBOOTED]<br>世界は再構築されました。";
+            updateUI();
+        }
+
+        function updateUI() {
+            const bar = document.getElementById('charge-bar');
+            const percent = Math.min(100, (sys.chargeTime / sys.chaosThreshold) * 100);
+            bar.style.width = percent + '%';
+            
+            const entropy = document.getElementById('entropy-val');
+            let entVal = (sys.chargeTime / sys.chaosThreshold) * 100;
+            if(sys.state === STATES.CHAOS) entVal = 100 + ((sys.chargeTime - sys.chaosThreshold)/10);
+            entropy.innerText = entVal.toFixed(2);
+        }
+
+        // --- MAIN LOOP ---
+        function animate() {
+            // 1. Charge Logic
+            if(cursor.down) {
+                sys.chargeTime++;
+                
+                // TRIGGER: CHAOS
+                if(sys.state === STATES.SANCTUM && sys.chargeTime > sys.chaosThreshold) {
+                    sys.state = STATES.CHAOS;
+                    document.body.classList.add('phase-chaos');
+                    document.getElementById('status-text').innerText = "CRITICAL FAILURE";
+                    // Explode existing fractals
+                    addForce(width/2, height/2, 1000, 1000); // Shockwave
+                }
+
+                // TRIGGER: GENESIS
+                if(sys.state === STATES.CHAOS && sys.chargeTime > sys.genesisThreshold) {
+                    sys.state = STATES.GENESIS;
+                    document.body.classList.remove('phase-chaos');
+                    document.body.classList.add('phase-genesis');
+                    
+                    // Clear old stuff
+                    fractals = [];
+                    // Spawn World Tree
+                    spawnFractal(width/2, height); 
+                    
+                    // Convert all particles to Genesis Type
+                    particles.forEach(p => p.init(true));
+                }
+            } else {
+                // Drain charge if not in irreversible state (Genesis is permanent until reload)
+                if(sys.state === STATES.SANCTUM) {
+                    sys.chargeTime = Math.max(0, sys.chargeTime - 5);
+                }
+            }
+            updateUI();
+
+            // 2. Background Rendering
+            if(sys.state === STATES.GENESIS) {
+                ctx.fillStyle = 'rgba(255, 251, 235, 0.1)'; // Light flash trails
+                if(Math.random() > 0.5) ctx.fillRect(0,0,width,height); // Strobe effect subtly
+            } else if (sys.state === STATES.CHAOS) {
+                ctx.fillStyle = 'rgba(20, 0, 0, 0.1)'; // Red trails
+                ctx.fillRect(0, 0, width, height);
+            } else {
+                ctx.fillStyle = `rgba(1, 4, 9, 0.2)`; // Normal void
+                ctx.fillRect(0, 0, width, height);
+            }
+
+            // 3. Fluid Physics Update
+            for(let i=0; i<grid.length; i++) {
+                grid[i].ax *= sys.fluidViscosity;
+                grid[i].ay *= sys.fluidViscosity;
+            }
+
+            // 4. Render Entities
+            ctx.globalCompositeOperation = 'screen'; 
+            
+            // Particles
+            particles.forEach(p => { p.update(); p.draw(); });
+            
+            // Fractals
+            fractals.forEach(f => { f.update(); f.draw(); });
+
+            // 5. Screen Shake
+            if(sys.state === STATES.CHAOS) {
+                const shake = Math.min(20, (sys.chargeTime - sys.chaosThreshold) * 0.1);
+                ctx.setTransform(1,0,0,1, (Math.random()-0.5)*shake, (Math.random()-0.5)*shake);
+            } else {
+                ctx.setTransform(1,0,0,1,0,0);
+            }
+
+            ctx.globalCompositeOperation = 'source-over';
+            requestAnimationFrame(animate);
+        }
+
+        // Init
         resize();
         initFluid();
-        animate(0);
+        animate();
 
     </script>
 </body>
