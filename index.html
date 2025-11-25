@@ -33,7 +33,7 @@
 
         /* Phase Classes for Body */
         body.phase-chaos { background-color: var(--chaos); }
-        body.phase-genesis { background-color: #000; } /* Deep darkness before light */
+        body.phase-genesis { background-color: #000; } /* Deep darkness to emphasize light */
 
         /* === CANVAS LAYERS === */
         #sanctum-canvas {
@@ -57,7 +57,7 @@
             display: flex; justify-content: center; align-items: center;
             transition: opacity 0.5s;
         }
-        body.phase-genesis #ui-layer { opacity: 0; } /* Hide UI in Genesis to focus on visuals */
+        body.phase-genesis #ui-layer { opacity: 0; pointer-events: none; } 
 
         /* === CONTENT CARD === */
         .artifact-card {
@@ -311,8 +311,8 @@
 
     <script>
         /**
-         * AETHERIAL ENGINE v2.0 - "The Cataclysm Update"
-         * Implements State Machine for Stability -> Chaos -> Genesis
+         * AETHERIAL ENGINE v2.1 - "Genesis Fix"
+         * Fixed whiteout issue in Genesis phase, enhanced spiral dynamics
          */
 
         const canvas = document.getElementById('sanctum-canvas');
@@ -338,9 +338,7 @@
             // Visual Params
             bgColor: { h: 220, s: 20, l: 5 },
             fluidViscosity: 0.98,
-            fractalColor: { h: 160, s: 80, l: 60 },
-            shake: 0,
-            timeSpeed: 1.0
+            shake: 0
         };
 
         // --- RESIZE HANDLER ---
@@ -387,25 +385,26 @@
                 this.type = 'NORMAL'; 
                 
                 if(isGenesis) {
-                    this.x = width/2; this.y = height/2; // Explosion from center
-                    const ang = Math.random() * Math.PI * 2;
-                    const speed = Math.random() * 20;
-                    this.vx = Math.cos(ang) * speed;
-                    this.vy = Math.sin(ang) * speed;
+                    this.x = (Math.random() - 0.5) * width * 2 + width/2; 
+                    this.y = (Math.random() - 0.5) * height * 2 + height/2; 
+                    this.vx = (Math.random() - 0.5) * 5;
+                    this.vy = (Math.random() - 0.5) * 5;
                     this.hue = Math.random() * 360; // Rainbow
                     this.type = 'GENESIS';
                 }
             }
 
             update() {
-                // 1. Grid Interaction (Fluid Dynamics)
-                const gx = Math.floor(this.x / gridSize);
-                const gy = Math.floor(this.y / gridSize);
-                
-                if (gx >= 0 && gx < cols && gy >= 0 && gy < rows) {
-                    const cell = grid[gx + gy * cols];
-                    this.vx += cell.ax * 0.5;
-                    this.vy += cell.ay * 0.5;
+                // 1. Grid Interaction (Fluid Dynamics) - Disabled in Genesis for pure orbital physics
+                if(sys.state !== STATES.GENESIS) {
+                    const gx = Math.floor(this.x / gridSize);
+                    const gy = Math.floor(this.y / gridSize);
+                    
+                    if (gx >= 0 && gx < cols && gy >= 0 && gy < rows) {
+                        const cell = grid[gx + gy * cols];
+                        this.vx += cell.ax * 0.5;
+                        this.vy += cell.ay * 0.5;
+                    }
                 }
 
                 // 2. State-Based Behavior
@@ -420,27 +419,35 @@
                     this.hue = (Math.random() < 0.1) ? 0 : 360; // Red or Black
                 }
                 else if(sys.state === STATES.GENESIS) {
-                    // Spiral Order
+                    // Strong Spiral Convergence
                     const dx = width/2 - this.x;
                     const dy = height/2 - this.y;
                     const dist = Math.sqrt(dx*dx + dy*dy);
                     
-                    // Orbit force
-                    this.vx += dy * 0.001;
-                    this.vy -= dx * 0.001;
-                    // Attraction
-                    this.vx += dx * 0.0005;
-                    this.vy += dy * 0.0005;
+                    // Orbit force (Tangential)
+                    const angVel = 0.005;
+                    this.vx += dy * angVel;
+                    this.vy -= dx * angVel;
                     
-                    this.vx *= 0.98; this.vy *= 0.98;
-                    this.hue = (this.age * 2) % 360; // Rainbow Cycle
+                    // Attraction force (Radial) - stronger than before
+                    const attractStr = 0.001; 
+                    this.vx += dx * attractStr;
+                    this.vy += dy * attractStr;
+                    
+                    // Friction to stabilize orbit
+                    this.vx *= 0.97; this.vy *= 0.97;
+                    
+                    // Cycle colors
+                    this.hue = (this.age * 5 + dist * 0.5) % 360; 
                 }
 
                 this.x += this.vx; this.y += this.vy;
 
-                // 3. Boundary Wrap
-                if(this.x < 0) this.x = width; if(this.x > width) this.x = 0;
-                if(this.y < 0) this.y = height; if(this.y > height) this.y = 0;
+                // 3. Boundary Wrap (Only for Sanctum/Chaos)
+                if(sys.state !== STATES.GENESIS) {
+                    if(this.x < 0) this.x = width; if(this.x > width) this.x = 0;
+                    if(this.y < 0) this.y = height; if(this.y > height) this.y = 0;
+                }
 
                 this.age++;
             }
@@ -451,7 +458,6 @@
                 let size = this.size * (1 + speed/2);
                 
                 if(sys.state === STATES.CHAOS) {
-                    // Glitchy rectangles
                     if(Math.random() < 0.2) {
                         ctx.fillStyle = '#f00';
                         ctx.fillRect(this.x, this.y, size*4, 2);
@@ -460,11 +466,11 @@
                 }
                 
                 if(sys.state === STATES.GENESIS) {
-                    ctx.fillStyle = `hsla(${this.hue}, 100%, 70%, ${alpha})`;
-                    ctx.shadowBlur = 10; ctx.shadowColor = ctx.fillStyle;
+                    // Bright Prismatic Light
+                    ctx.fillStyle = `hsla(${this.hue}, 100%, 70%, 1)`; // Full alpha for trails
+                    size = 2; // Fixed star size
                 } else {
                     ctx.fillStyle = `hsla(${this.hue}, 80%, 60%, ${alpha})`;
-                    ctx.shadowBlur = 0;
                 }
 
                 ctx.beginPath();
@@ -478,7 +484,7 @@
             rows = Math.ceil(height / gridSize);
             grid = new Array(cols * rows).fill(0).map(() => ({ ax: 0, ay: 0 }));
             particles = [];
-            for(let i=0; i<2000; i++) particles.push(new Particle());
+            for(let i=0; i<3000; i++) particles.push(new Particle());
         }
 
         function addForce(x, y, dx, dy) {
@@ -496,7 +502,7 @@
             }
         }
 
-        // --- FRACTAL SYSTEM (With Life/Death) ---
+        // --- FRACTAL SYSTEM ---
         let fractals = [];
 
         class FractalTree {
@@ -508,9 +514,9 @@
                 this.burnt = false;
                 this.isGenesis = (sys.state === STATES.GENESIS);
                 
-                // Genesis Tree is huge
-                let startLen = this.isGenesis ? 150 : 80;
-                let startDepth = this.isGenesis ? 11 : 9;
+                // Huge Tree for Genesis
+                let startLen = this.isGenesis ? height * 0.25 : 80;
+                let startDepth = this.isGenesis ? 12 : 9;
                 
                 this.generate(x, y, -Math.PI/2, startLen, startDepth);
             }
@@ -524,26 +530,24 @@
                     sx: x, sy: y, ex: endX, ey: endY,
                     depth: depth,
                     visible: false,
-                    delay: (11 - depth) * 5,
-                    disintegrated: false // For Chaos
+                    delay: (12 - depth) * 5,
+                    disintegrated: false
                 });
 
-                const spread = this.isGenesis ? 0.4 : (0.5 + Math.random() * 0.3);
-                this.generate(endX, endY, angle - spread, len * 0.7, depth - 1);
-                this.generate(endX, endY, angle + spread, len * 0.7, depth - 1);
+                // More symmetrical spread for World Tree
+                const spread = this.isGenesis ? 0.35 : (0.5 + Math.random() * 0.3);
+                const decay = this.isGenesis ? 0.8 : 0.7;
+                
+                this.generate(endX, endY, angle - spread, len * decay, depth - 1);
+                this.generate(endX, endY, angle + spread, len * decay, depth - 1);
             }
 
             update() {
                 this.age++;
-                
-                if(sys.state === STATES.CHAOS && !this.burnt) {
-                    this.burnt = true; // Mark as burning
-                }
+                if(sys.state === STATES.CHAOS && !this.burnt) this.burnt = true;
 
                 this.branches.forEach(b => {
                     if(this.age > b.delay) b.visible = true;
-                    
-                    // Chaos disintegration logic
                     if(sys.state === STATES.CHAOS) {
                         if(Math.random() < 0.05) b.disintegrated = true;
                     }
@@ -554,31 +558,28 @@
                 this.branches.forEach(b => {
                     if(!b.visible || b.disintegrated) return;
 
-                    const progress = Math.min(1, (this.age - b.delay) / 20);
+                    const progress = Math.min(1, (this.age - b.delay) / 40); // Slower growth for majesty
                     const curX = b.sx + (b.ex - b.sx) * progress;
                     const curY = b.sy + (b.ey - b.sy) * progress;
 
-                    ctx.lineWidth = b.depth * (this.isGenesis ? 0.8 : 0.5);
+                    ctx.lineWidth = b.depth * (this.isGenesis ? 1.5 : 0.5);
                     
-                    // Color Logic
                     if(sys.state === STATES.CHAOS) {
-                        ctx.strokeStyle = `rgba(${50 + Math.random()*50}, 0, 0, ${0.5 + Math.random()*0.5})`; // Burning Red/Black
+                        ctx.strokeStyle = `rgba(${50 + Math.random()*50}, 0, 0, ${0.5 + Math.random()*0.5})`;
                         ctx.shadowBlur = 5; ctx.shadowColor = 'red';
                     } else if (this.isGenesis) {
-                        // Rainbow Gold
-                        const hue = (this.age + b.depth * 20) % 360;
-                        ctx.strokeStyle = `hsla(${hue}, 80%, 70%, 0.8)`;
-                        ctx.shadowBlur = 10; ctx.shadowColor = `hsla(${hue}, 80%, 50%, 0.5)`;
+                        // Golden Core to Rainbow Tips
+                        const hue = (this.age + b.depth * 10) % 360;
+                        ctx.strokeStyle = `hsla(${hue}, 100%, 70%, 0.8)`;
+                        // Add intense glow
+                        ctx.shadowBlur = 15; ctx.shadowColor = `hsla(${hue}, 100%, 50%, 0.8)`;
                     } else {
-                        // Normal Sanctum
                         ctx.strokeStyle = `hsla(${160 - b.depth*5}, 80%, 70%, 0.5)`;
                         ctx.shadowBlur = 0;
                     }
 
                     ctx.beginPath();
                     ctx.moveTo(b.sx, b.sy);
-                    
-                    // Jitter lines in Chaos
                     if(sys.state === STATES.CHAOS) {
                          ctx.lineTo(curX + (Math.random()-0.5)*10, curY + (Math.random()-0.5)*10);
                     } else {
@@ -593,19 +594,13 @@
         function startCharge() { 
             cursor.down = true; 
             document.body.classList.add('active-hold'); 
-            // Spawn normal fractal if in stable state
             if(sys.state === STATES.SANCTUM) spawnFractal(cursor.x, cursor.y);
         }
         
         function endCharge() { 
             cursor.down = false; 
             document.body.classList.remove('active-hold');
-            
-            // If released during Chaos, reset to Sanctum (Mercy)
-            if(sys.state === STATES.CHAOS) {
-                resetWorld();
-            }
-            // If released during Sanctum, just drain charge
+            if(sys.state === STATES.CHAOS) resetWorld();
         }
 
         function spawnFractal(x, y) {
@@ -628,7 +623,6 @@
             const bar = document.getElementById('charge-bar');
             const percent = Math.min(100, (sys.chargeTime / sys.chaosThreshold) * 100);
             bar.style.width = percent + '%';
-            
             const entropy = document.getElementById('entropy-val');
             let entVal = (sys.chargeTime / sys.chaosThreshold) * 100;
             if(sys.state === STATES.CHAOS) entVal = 100 + ((sys.chargeTime - sys.chaosThreshold)/10);
@@ -640,66 +634,52 @@
             // 1. Charge Logic
             if(cursor.down) {
                 sys.chargeTime++;
-                
-                // TRIGGER: CHAOS
                 if(sys.state === STATES.SANCTUM && sys.chargeTime > sys.chaosThreshold) {
                     sys.state = STATES.CHAOS;
                     document.body.classList.add('phase-chaos');
                     document.getElementById('status-text').innerText = "CRITICAL FAILURE";
-                    // Explode existing fractals
-                    addForce(width/2, height/2, 1000, 1000); // Shockwave
+                    addForce(width/2, height/2, 1000, 1000); 
                 }
-
-                // TRIGGER: GENESIS
                 if(sys.state === STATES.CHAOS && sys.chargeTime > sys.genesisThreshold) {
                     sys.state = STATES.GENESIS;
                     document.body.classList.remove('phase-chaos');
                     document.body.classList.add('phase-genesis');
                     
-                    // Clear old stuff
                     fractals = [];
-                    // Spawn World Tree
+                    // Spawn World Tree from bottom center
                     spawnFractal(width/2, height); 
-                    
-                    // Convert all particles to Genesis Type
                     particles.forEach(p => p.init(true));
                 }
             } else {
-                // Drain charge if not in irreversible state (Genesis is permanent until reload)
-                if(sys.state === STATES.SANCTUM) {
-                    sys.chargeTime = Math.max(0, sys.chargeTime - 5);
-                }
+                if(sys.state === STATES.SANCTUM) sys.chargeTime = Math.max(0, sys.chargeTime - 5);
             }
             updateUI();
 
             // 2. Background Rendering
             if(sys.state === STATES.GENESIS) {
-                ctx.fillStyle = 'rgba(255, 251, 235, 0.1)'; // Light flash trails
-                if(Math.random() > 0.5) ctx.fillRect(0,0,width,height); // Strobe effect subtly
+                // FIXED: Don't whiteout. Use very transparent black to allow light trails.
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.05)'; 
+                ctx.fillRect(0,0,width,height); 
             } else if (sys.state === STATES.CHAOS) {
-                ctx.fillStyle = 'rgba(20, 0, 0, 0.1)'; // Red trails
+                ctx.fillStyle = 'rgba(20, 0, 0, 0.1)'; 
                 ctx.fillRect(0, 0, width, height);
             } else {
-                ctx.fillStyle = `rgba(1, 4, 9, 0.2)`; // Normal void
+                ctx.fillStyle = `rgba(1, 4, 9, 0.2)`; 
                 ctx.fillRect(0, 0, width, height);
             }
 
-            // 3. Fluid Physics Update
+            // 3. Physics
             for(let i=0; i<grid.length; i++) {
                 grid[i].ax *= sys.fluidViscosity;
                 grid[i].ay *= sys.fluidViscosity;
             }
 
-            // 4. Render Entities
+            // 4. Render
             ctx.globalCompositeOperation = 'screen'; 
-            
-            // Particles
             particles.forEach(p => { p.update(); p.draw(); });
-            
-            // Fractals
             fractals.forEach(f => { f.update(); f.draw(); });
 
-            // 5. Screen Shake
+            // 5. Shake
             if(sys.state === STATES.CHAOS) {
                 const shake = Math.min(20, (sys.chargeTime - sys.chaosThreshold) * 0.1);
                 ctx.setTransform(1,0,0,1, (Math.random()-0.5)*shake, (Math.random()-0.5)*shake);
@@ -711,7 +691,6 @@
             requestAnimationFrame(animate);
         }
 
-        // Init
         resize();
         initFluid();
         animate();
