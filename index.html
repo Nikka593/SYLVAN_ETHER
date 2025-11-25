@@ -3,592 +3,478 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SYLVAN ETHER | The Living Archive</title>
+    <title>AETHERIAL SANCTUM | The Source Code of Nature</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Cormorant+Garamond:ital,wght@0,300;0,600;1,400&family=Zen+Old+Mincho:wght@400;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;900&family=Cormorant+Garamond:ital,wght@0,300;0,600;1,400&family=Zen+Old+Mincho:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        /* === CORE AESTHETICS === */
+        /* === DEEP AESTHETICS === */
         :root {
-            --deep-forest: #02120e;
-            --moss-dark: #064e3b;
-            --moss-light: #10b981;
-            --spirit-gold: #fbbf24;
-            --ether-blue: #a5f3fc;
+            --void: #010409;
+            --ether-teal: #2dd4bf;
+            --ether-gold: #fcd34d;
+            --ether-magenta: #d946ef;
             --f-header: 'Cinzel Decorative', serif;
             --f-body: 'Cormorant Garamond', serif;
-            --f-jp: 'Zen Old Mincho', serif;
         }
 
         body, html {
             margin: 0; padding: 0; width: 100%; height: 100%;
-            background-color: var(--deep-forest);
+            background-color: var(--void);
             color: #e2e8f0;
-            font-family: var(--f-jp);
-            overflow: hidden; /* 世界観を壊さないようスクロールバーを隠す */
-            cursor: none; /* OSカーソルを消去 */
+            overflow: hidden;
+            cursor: none; /* OSカーソル消去 */
         }
 
         /* === CANVAS LAYERS === */
-        #world-canvas {
+        #sanctum-canvas {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            z-index: 1; pointer-events: none;
-            filter: blur(0.5px) contrast(1.2);
-        }
-        
-        /* 闇のレイヤー（カーソルで晴れる） */
-        #shadow-layer {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            z-index: 5; pointer-events: none;
-            background: radial-gradient(circle at var(--x) var(--y), transparent 100px, rgba(2, 18, 14, 0.95) 400px);
-            transition: background 0.1s ease-out;
-            mix-blend-mode: multiply;
+            z-index: 1;
         }
 
-        /* === UI OVERLAY === */
+        /* === UI OVERLAY with Glassmorphism === */
         #ui-layer {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             z-index: 10; pointer-events: none;
-            perspective: 1000px;
-        }
-
-        /* === CURSOR (THE WISP) === */
-        .wisp-cursor {
-            position: fixed; top: 0; left: 0; width: 20px; height: 20px;
-            z-index: 9999; pointer-events: none;
-            transform: translate(-50%, -50%);
-            mix-blend-mode: screen;
-        }
-        .wisp-core {
-            position: absolute; width: 100%; height: 100%;
-            background: radial-gradient(circle, #fff, var(--ether-blue) 40%, transparent 70%);
-            border-radius: 50%;
-            filter: blur(2px);
-            animation: breathe 3s infinite ease-in-out;
-        }
-        .wisp-trail {
-            position: absolute; top: 50%; left: 50%;
-            width: 100px; height: 100px;
-            background: radial-gradient(circle, rgba(165, 243, 252, 0.2), transparent 60%);
-            transform: translate(-50%, -50%);
-            border-radius: 50%;
-            filter: blur(10px);
-        }
-
-        /* === CONTENT CARDS (STONE TABLETS) === */
-        .tablet-container {
-            position: absolute; top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            width: 80vw; max-width: 1000px; height: 70vh;
             display: flex; justify-content: center; align-items: center;
-            pointer-events: none; /* コンテンツ切替時のみ有効化 */
         }
 
-        .ancient-tablet {
-            position: absolute;
-            width: 100%; height: 100%;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border-radius: 2px;
-            padding: 60px;
-            box-shadow: 0 0 50px rgba(0,0,0,0.5);
-            
-            opacity: 0; transform: scale(0.9) translateY(20px);
-            transition: all 1s cubic-bezier(0.16, 1, 0.3, 1);
+        /* === CONTENT CARD === */
+        .artifact-card {
+            position: relative;
+            width: 80vw; max-width: 1200px; height: 70vh;
+            background: rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 0 100px rgba(0,0,0,0.8);
+            opacity: 0; transform: scale(0.95);
+            transition: all 1.2s cubic-bezier(0.19, 1, 0.22, 1);
             pointer-events: auto;
-            
-            display: grid; grid-template-columns: 1fr 1fr; gap: 40px;
+            display: grid; grid-template-columns: 1.2fr 0.8fr;
+            overflow: hidden;
         }
-        
-        .ancient-tablet.active {
-            opacity: 1; transform: scale(1) translateY(0);
-            z-index: 20;
+
+        .artifact-card.active {
+            opacity: 1; transform: scale(1);
         }
-        
-        /* 魔法的なボーダーエフェクト */
-        .ancient-tablet::before {
-            content: ''; position: absolute; top: -1px; left: -1px; right: -1px; bottom: -1px;
-            border-radius: 2px; padding: 1px;
-            background: linear-gradient(45deg, transparent, var(--moss-light), transparent);
-            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+
+        /* Magic Border Animation */
+        .artifact-card::after {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            border: 1px solid transparent;
+            background: linear-gradient(135deg, rgba(45, 212, 191, 0.3), transparent 40%, rgba(217, 70, 239, 0.3)) border-box;
+            -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+            mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
             -webkit-mask-composite: xor;
             mask-composite: exclude;
-            opacity: 0.5;
+            pointer-events: none;
         }
 
         /* === TYPOGRAPHY === */
+        .hero-text {
+            padding: 80px;
+            display: flex; flex-direction: column; justify-content: center;
+            z-index: 2;
+        }
+
         h1 {
-            font-family: var(--f-header); font-size: 4rem;
-            background: linear-gradient(to bottom, #fff, var(--ether-blue));
+            font-family: var(--f-header); font-size: 5.5rem; line-height: 0.9;
+            background: linear-gradient(to right, #fff, var(--ether-teal));
             -webkit-background-clip: text; color: transparent;
-            margin-bottom: 1rem;
-            filter: drop-shadow(0 0 10px rgba(165, 243, 252, 0.5));
-        }
-        h2 { font-family: var(--f-body); font-style: italic; font-size: 1.5rem; color: var(--spirit-gold); margin-bottom: 2rem; letter-spacing: 2px; }
-        p { font-size: 1.1rem; line-height: 1.8; color: #cbd5e1; text-shadow: 0 2px 4px rgba(0,0,0,0.8); margin-bottom: 1.5rem; }
-
-        .rune-text {
-            font-family: var(--f-header); opacity: 0.1; font-size: 8rem;
-            position: absolute; top: -20px; left: -20px; pointer-events: none;
-            color: var(--ether-blue);
-        }
-
-        /* === INTERACTIVE ELEMENTS === */
-        .spirit-btn {
-            font-family: var(--f-header);
-            font-size: 1.2rem;
-            color: var(--ether-blue);
-            border: 1px solid rgba(165, 243, 252, 0.3);
-            padding: 15px 40px;
-            background: transparent;
-            cursor: none; /* JSでカーソル追従させるため */
-            transition: all 0.3s;
-            position: relative; overflow: hidden;
-            letter-spacing: 3px;
-        }
-        .spirit-btn::after {
-            content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-            transition: left 0.5s;
-        }
-        .spirit-btn:hover {
-            border-color: var(--ether-blue);
-            box-shadow: 0 0 20px rgba(165, 243, 252, 0.3);
-            background: rgba(165, 243, 252, 0.05);
-            text-shadow: 0 0 8px var(--ether-blue);
-        }
-        .spirit-btn:hover::after { left: 100%; }
-
-        /* === ANIMATIONS === */
-        @keyframes breathe {
-            0%, 100% { transform: scale(1); opacity: 0.8; }
-            50% { transform: scale(1.1); opacity: 1; }
+            margin-bottom: 2rem;
+            filter: drop-shadow(0 0 20px rgba(45, 212, 191, 0.4));
+            mix-blend-mode: overlay;
         }
         
-        .fade-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #fff; z-index: 99999;
-            pointer-events: none; opacity: 0;
-            transition: opacity 1s;
+        h2 {
+            font-family: var(--f-body); font-style: italic; font-size: 1.5rem;
+            color: var(--ether-gold); letter-spacing: 4px; margin-bottom: 1rem;
+            text-transform: uppercase;
         }
-        .fade-overlay.flash { opacity: 1; }
 
-        /* ナビゲーションドット */
-        .nav-dots {
-            position: fixed; right: 40px; top: 50%; transform: translateY(-50%);
-            display: flex; flex-direction: column; gap: 20px; z-index: 50;
+        p {
+            font-family: 'Zen Old Mincho', serif; font-size: 1.1rem; line-height: 2;
+            color: rgba(255,255,255,0.8); max-width: 600px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.5);
         }
-        .dot {
-            width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.2);
-            transition: all 0.3s;
-        }
-        .dot.active { background: var(--ether-blue); box-shadow: 0 0 10px var(--ether-blue); transform: scale(1.5); }
 
+        /* === INTERACTIVE BUTTON === */
+        .aether-btn {
+            margin-top: 40px;
+            font-family: var(--f-header); font-size: 1.2rem; letter-spacing: 3px;
+            color: var(--ether-teal);
+            border: 1px solid rgba(45, 212, 191, 0.3);
+            padding: 20px 50px;
+            background: linear-gradient(90deg, transparent, rgba(45, 212, 191, 0.05), transparent);
+            cursor: none;
+            transition: all 0.5s;
+            position: relative;
+            overflow: hidden;
+            width: fit-content;
+        }
+        
+        .aether-btn::before {
+            content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            transition: left 0.6s;
+        }
+        
+        .aether-btn:hover {
+            border-color: var(--ether-teal);
+            box-shadow: 0 0 30px rgba(45, 212, 191, 0.2);
+            text-shadow: 0 0 10px var(--ether-teal);
+        }
+        .aether-btn:hover::before { left: 100%; }
+
+        /* === VISUAL SIDE === */
+        .visual-side {
+            position: relative;
+            border-left: 1px solid rgba(255,255,255,0.1);
+            display: flex; align-items: center; justify-content: center;
+        }
+        
+        .glyph-ring {
+            width: 300px; height: 300px;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            animation: rotate-slow 60s linear infinite;
+        }
+        .glyph-inner {
+            width: 70%; height: 70%;
+            border: 1px dashed rgba(45, 212, 191, 0.3);
+            transform: rotate(45deg);
+        }
+
+        @keyframes rotate-slow { 100% { transform: rotate(360deg); } }
+
+        /* === CURSOR === */
+        #cursor-core {
+            position: fixed; top: 0; left: 0; width: 10px; height: 10px;
+            background: #fff; border-radius: 50%;
+            pointer-events: none; z-index: 9999;
+            transform: translate(-50%, -50%);
+            mix-blend-mode: difference;
+            transition: transform 0.1s;
+        }
+        #cursor-aura {
+            position: fixed; top: 0; left: 0; width: 60px; height: 60px;
+            border: 1px solid rgba(255,255,255,0.3); border-radius: 50%;
+            pointer-events: none; z-index: 9998;
+            transform: translate(-50%, -50%);
+            transition: width 0.3s, height 0.3s, border-color 0.3s;
+        }
+
+        body.active-hold #cursor-core { transform: translate(-50%, -50%) scale(3); background: var(--ether-gold); }
+        body.active-hold #cursor-aura { width: 100px; height: 100px; border-color: var(--ether-magenta); border-width: 2px; animation: pulse-fast 0.5s infinite; }
+
+        @keyframes pulse-fast { 0% { opacity: 0.5; transform: translate(-50%, -50%) scale(1); } 100% { opacity: 0; transform: translate(-50%, -50%) scale(1.5); } }
+
+        /* HUD */
+        .hud-info {
+            position: fixed; bottom: 30px; left: 30px; z-index: 20;
+            font-family: var(--f-header); font-size: 0.8rem; color: rgba(255,255,255,0.3);
+            pointer-events: none; letter-spacing: 2px;
+        }
     </style>
 </head>
 <body>
 
-    <!-- Canvas World -->
-    <canvas id="world-canvas"></canvas>
-    <div id="shadow-layer"></div>
+    <canvas id="sanctum-canvas"></canvas>
 
-    <!-- The Wisp (Cursor) -->
-    <div class="wisp-cursor" id="wisp">
-        <div class="wisp-core"></div>
-        <div class="wisp-trail"></div>
-    </div>
+    <div id="cursor-core"></div>
+    <div id="cursor-aura"></div>
 
-    <!-- Flash Effect for Transitions -->
-    <div class="fade-overlay" id="flash"></div>
-
-    <!-- UI Overlay -->
     <div id="ui-layer">
-        
-        <!-- Navigation Dots -->
-        <div class="nav-dots">
-            <div class="dot active" data-idx="0"></div>
-            <div class="dot" data-idx="1"></div>
-            <div class="dot" data-idx="2"></div>
-        </div>
-
-        <!-- Content Area -->
-        <div class="tablet-container">
-            
-            <!-- SECTION 1: THE AWAKENING -->
-            <div class="ancient-tablet active" id="slide-0">
-                <div class="rune-text">ORIGIN</div>
-                <div style="z-index: 2; display: flex; flex-direction: column; justify-content: center;">
-                    <h2>The Beginning</h2>
-                    <h1>SYLVAN ETHER</h1>
-                    <p>
-                        ようこそ、忘れられた記憶の森へ。<br>
-                        ここでは、あなたの「観測」だけが世界を定義します。<br>
-                        マウス（ウィスプ）を動かし、闇に隠された真実を照らし出してください。
-                    </p>
-                    <p>
-                        この空間は生きています。クリックすれば生命が芽吹き、<br>
-                        静止すれば森は呼吸を始めます。
-                    </p>
-                    <div style="margin-top: 30px;">
-                        <button class="spirit-btn" onclick="nextSlide()">ENTER THE WOODS</button>
-                    </div>
+        <div class="artifact-card active" id="main-card">
+            <div class="hero-text">
+                <h2>The Final Frontier</h2>
+                <h1>AETHERIAL<br>SANCTUM</h1>
+                <p>
+                    ここは、コードと自然が交差する特異点。<br>
+                    マウスを動かし「流体」を乱してください。<br>
+                    クリックで「フラクタル」を植えてください。<br>
+                    長押しで「次元」を歪めてください。<br>
+                    <br>
+                    あなたの意志が、この世界の物理法則です。
+                </p>
+                <button class="aether-btn" onmousedown="startCharge()" onmouseup="endCharge()" onmouseleave="endCharge()">
+                    INITIATE SEQUENCE
+                </button>
+            </div>
+            <div class="visual-side">
+                <div class="glyph-ring">
+                    <div class="glyph-inner"></div>
                 </div>
-                <!-- Right side: Visual placeholder (handled by canvas mostly, but adding a glass pane) -->
-                <div style="border-left: 1px solid rgba(255,255,255,0.1); padding-left: 40px; display: flex; align-items: center; justify-content: center; position: relative;">
-                    <div style="text-align: center; opacity: 0.8;">
-                        <div style="font-family: var(--f-header); font-size: 5rem; line-height: 1; color: var(--spirit-gold); text-shadow: 0 0 20px var(--spirit-gold);">01</div>
-                        <div style="font-family: var(--f-body); letter-spacing: 5px;">GENESIS</div>
-                    </div>
+                <div style="position: absolute; bottom: 20px; right: 20px; font-family: var(--f-header); opacity: 0.5; writing-mode: vertical-rl;">
+                    SYS.GENESIS.VER.3.0
                 </div>
             </div>
-
-            <!-- SECTION 2: THE ECOSYSTEM -->
-            <div class="ancient-tablet" id="slide-1">
-                <div class="rune-text">LIFE</div>
-                <div style="z-index: 2; display: flex; flex-direction: column; justify-content: center;">
-                    <h2>Concept</h2>
-                    <h1>PROCEDURAL LIFE</h1>
-                    <p>
-                        このウェブサイトの背景にある植物は、<br>
-                        プリレンダリングされた画像ではなく、<br>
-                        コードによってリアルタイムに成長しています。
-                    </p>
-                    <p>
-                        <strong style="color:var(--moss-light)">[Luminescence]</strong><br>
-                        光合成の逆説。光を与えることで、情報は可視化されます。<br>
-                        画面上のあらゆる場所をクリックしてみてください。
-                    </p>
-                    <div style="margin-top: 30px;">
-                        <button class="spirit-btn" onclick="nextSlide()">GO DEEPER</button>
-                    </div>
-                </div>
-                <div style="border-left: 1px solid rgba(255,255,255,0.1); padding-left: 40px; display: flex; align-items: center; justify-content: center;">
-                    <div style="text-align: center; opacity: 0.8;">
-                        <div style="font-family: var(--f-header); font-size: 5rem; line-height: 1; color: var(--ether-blue); text-shadow: 0 0 20px var(--ether-blue);">02</div>
-                        <div style="font-family: var(--f-body); letter-spacing: 5px;">GROWTH</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- SECTION 3: THE ETHER -->
-            <div class="ancient-tablet" id="slide-2">
-                <div class="rune-text">VOID</div>
-                <div style="z-index: 2; display: flex; flex-direction: column; justify-content: center;">
-                    <h2>Finality</h2>
-                    <h1>ETHEREAL NEXUS</h1>
-                    <p>
-                        森を抜けた先には、無限の可能性が広がっています。<br>
-                        デザイン、テクノロジー、そして自然の融合。<br>
-                        これが我々の提示する「次世代の没入体験」です。
-                    </p>
-                    <p>
-                        ここから先は、あなた自身の物語を紡いでください。
-                    </p>
-                    <div style="margin-top: 30px;">
-                        <button class="spirit-btn" onclick="sys.reset()">REINCARNATE</button>
-                    </div>
-                </div>
-                <div style="border-left: 1px solid rgba(255,255,255,0.1); padding-left: 40px; display: flex; align-items: center; justify-content: center;">
-                    <div style="text-align: center; opacity: 0.8;">
-                        <div style="font-family: var(--f-header); font-size: 5rem; line-height: 1; color: #fff; text-shadow: 0 0 20px #fff;">03</div>
-                        <div style="font-family: var(--f-body); letter-spacing: 5px;">INFINITE</div>
-                    </div>
-                </div>
-            </div>
-
         </div>
     </div>
 
-    <!-- AUDIO HINT (Visual only) -->
-    <div style="position: fixed; bottom: 30px; left: 30px; font-family: var(--f-tech); font-size: 0.7rem; color: rgba(255,255,255,0.3); letter-spacing: 2px;">
-        IMMERSIVE EXPERIENCE v2.0 // AUDIO: IMAGINED
+    <div class="hud-info">
+        INTERACTION: FLUID / FRACTAL / WARP<br>
+        FPS: <span id="fps-counter">60</span>
     </div>
 
     <script>
-        /* === SYSTEM CORE === */
-        const sys = {
-            width: window.innerWidth,
-            height: window.innerHeight,
-            mouseX: window.innerWidth / 2,
-            mouseY: window.innerHeight / 2,
-            currentSlide: 0,
-            slides: document.querySelectorAll('.ancient-tablet'),
-            dots: document.querySelectorAll('.dot'),
-            time: 0,
-            
-            // World Entities
-            vines: [],
-            particles: [],
-            blooms: []
+        /**
+         * AETHERIAL ENGINE v1.0
+         * Core Concepts: Fluid Dynamics, Recursive fractals, Particle Systems
+         */
+
+        const canvas = document.getElementById('sanctum-canvas');
+        const ctx = canvas.getContext('2d', { alpha: false }); // Optimize
+        let width, height;
+
+        const cursor = { x: 0, y: 0, px: 0, py: 0, down: false, charge: 0 };
+        const config = {
+            particleCount: 2000,
+            fluidViscosity: 0.98,
+            fractalDepth: 9,
+            colorShift: 0
         };
 
-        const canvas = document.getElementById('world-canvas');
-        const ctx = canvas.getContext('2d');
-        const wisp = document.getElementById('wisp');
-        const shadowLayer = document.getElementById('shadow-layer');
-
-        /* === 1. THE WISP (CURSOR LOGIC) === */
-        document.addEventListener('mousemove', (e) => {
-            sys.mouseX = e.clientX;
-            sys.mouseY = e.clientY;
-            
-            // Move custom cursor
-            wisp.style.left = e.clientX + 'px';
-            wisp.style.top = e.clientY + 'px';
-            
-            // Update shadow spotlight
-            document.documentElement.style.setProperty('--x', e.clientX + 'px');
-            document.documentElement.style.setProperty('--y', e.clientY + 'px');
-        });
-
-        document.addEventListener('mousedown', (e) => {
-            spawnBloom(e.clientX, e.clientY);
-            // Ripple effect on click
-            for(let i=0; i<5; i++) {
-                sys.particles.push(new Firefly(e.clientX, e.clientY, true));
-            }
-        });
-
-        /* === 2. GENERATIVE NATURE (CANVAS) === */
+        // --- RESIZE HANDLER ---
         function resize() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-            sys.width = canvas.width;
-            sys.height = canvas.height;
-            initForest();
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            initFluid();
         }
         window.addEventListener('resize', resize);
 
-        class Vine {
-            constructor(x, width, length, color) {
-                this.rootX = x;
-                this.rootY = sys.height + 20; // Bottom of screen
-                this.width = width;
-                this.length = length;
-                this.segments = 15;
-                this.color = color;
-                this.angle = Math.random() * Math.PI;
-                this.speed = 0.002 + Math.random() * 0.003;
-                this.nodes = [];
-                
-                // Initialize nodes
-                let currentX = this.rootX;
-                let currentY = this.rootY;
-                for (let i = 0; i < this.segments; i++) {
-                    this.nodes.push({ x: currentX, y: currentY, baseAng: Math.random() * 0.5 - 0.25 });
-                    currentY -= this.length / this.segments;
-                    // Random curve
-                    currentX += (Math.random() - 0.5) * 20; 
-                }
-            }
+        // --- INPUT HANDLER ---
+        document.addEventListener('mousemove', e => {
+            cursor.px = cursor.x; cursor.py = cursor.y;
+            cursor.x = e.clientX; cursor.y = e.clientY;
+            
+            // Cursor Visuals
+            const core = document.getElementById('cursor-core');
+            const aura = document.getElementById('cursor-aura');
+            core.style.left = aura.style.left = e.clientX + 'px';
+            core.style.top = aura.style.top = e.clientY + 'px';
 
+            // Add Force to Fluid
+            addForce(cursor.x, cursor.y, (cursor.x - cursor.px) * 2, (cursor.y - cursor.py) * 2);
+        });
+
+        document.addEventListener('mousedown', e => {
+            cursor.down = true;
+            document.body.classList.add('active-hold');
+            spawnFractal(e.clientX, e.clientY);
+        });
+        document.addEventListener('mouseup', () => {
+            cursor.down = false;
+            document.body.classList.remove('active-hold');
+        });
+
+        // --- FLUID & PARTICLE SYSTEM ---
+        let particles = [];
+        let grid = [];
+        const gridSize = 40; // Resolution of fluid grid
+        let cols, rows;
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                this.vx = 0; this.vy = 0;
+                this.age = Math.random() * 100;
+                this.life = 100 + Math.random() * 100;
+                this.size = Math.random() * 2;
+                this.hue = Math.random() * 60 + 160; // Teal/Blue base
+            }
             update() {
-                this.angle += this.speed;
+                // Get fluid force from grid
+                const gx = Math.floor(this.x / gridSize);
+                const gy = Math.floor(this.y / gridSize);
                 
-                // Interactive Sway: Mouse influence
-                const dx = sys.mouseX - this.rootX;
-                const influence = Math.max(-50, Math.min(50, dx / 10)); // Clamp influence
-
-                // Calculate sway for each node
-                for (let i = 1; i < this.segments; i++) {
-                    // Wind + Mouse interaction
-                    const wind = Math.sin(this.angle + i * 0.2) * (i * 2);
-                    const mousePush = (1 - Math.abs(dx)/sys.width) * influence * (i * 0.5); 
-                    
-                    // Simple spring-like movement
-                    this.nodes[i].x = this.rootX + wind - mousePush + (Math.sin(i)*20);
+                if (gx >= 0 && gx < cols && gy >= 0 && gy < rows) {
+                    const cell = grid[gx + gy * cols];
+                    this.vx += cell.ax * 0.5; // Apply acceleration
+                    this.vy += cell.ay * 0.5;
                 }
+
+                // Friction & Movement
+                this.vx *= 0.96; this.vy *= 0.96;
+                this.x += this.vx; this.y += this.vy;
+
+                // Wrap around screen
+                if(this.x < 0) this.x = width; if(this.x > width) this.x = 0;
+                if(this.y < 0) this.y = height; if(this.y > height) this.y = 0;
+
+                // Color shift based on charge
+                this.hue = 160 + config.colorShift + (Math.sin(this.age * 0.05) * 30);
+                this.age++;
             }
-
             draw() {
+                const speed = Math.sqrt(this.vx*this.vx + this.vy*this.vy);
+                ctx.fillStyle = `hsla(${this.hue}, 80%, 60%, ${Math.min(1, speed * 0.5 + 0.1)})`;
                 ctx.beginPath();
-                ctx.moveTo(this.nodes[0].x, this.nodes[0].y);
-                
-                // Quadratic bezier curve through nodes
-                for (let i = 1; i < this.segments - 1; i++) {
-                    const xc = (this.nodes[i].x + this.nodes[i+1].x) / 2;
-                    const yc = (this.nodes[i].y + this.nodes[i+1].y) / 2;
-                    ctx.quadraticCurveTo(this.nodes[i].x, this.nodes[i].y, xc, yc);
-                }
-                
-                // Tip
-                ctx.quadraticCurveTo(
-                    this.nodes[this.segments-1].x, 
-                    this.nodes[this.segments-1].y, 
-                    this.nodes[this.segments-1].x, 
-                    this.nodes[this.segments-1].y
-                );
-
-                ctx.strokeStyle = this.color;
-                ctx.lineWidth = this.width;
-                ctx.lineCap = 'round';
-                ctx.stroke();
-
-                // Glow
-                ctx.shadowBlur = 10;
-                ctx.shadowColor = this.color;
-                ctx.stroke();
-                ctx.shadowBlur = 0;
+                ctx.arc(this.x, this.y, this.size * (1 + speed/2), 0, Math.PI * 2);
+                ctx.fill();
             }
         }
 
-        class Firefly {
-            constructor(x, y, isSpark = false) {
-                this.x = x || Math.random() * sys.width;
-                this.y = y || Math.random() * sys.height;
-                this.vx = (Math.random() - 0.5) * (isSpark ? 10 : 2);
-                this.vy = (Math.random() - 0.5) * (isSpark ? 10 : 2);
-                this.size = Math.random() * 3;
-                this.life = 1.0;
-                this.decay = isSpark ? 0.02 : 0.005;
-                this.color = isSpark ? '#fbbf24' : '#a5f3fc'; // Gold or Blue
-            }
-            update() {
-                this.x += this.vx;
-                this.y += this.vy;
-                this.life -= this.decay;
-                
-                // Interactive: Flee from cursor
-                const dx = this.x - sys.mouseX;
-                const dy = this.y - sys.mouseY;
-                const dist = Math.sqrt(dx*dx + dy*dy);
-                if(dist < 150) {
-                    this.vx += dx * 0.001;
-                    this.vy += dy * 0.001;
+        function initFluid() {
+            cols = Math.ceil(width / gridSize);
+            rows = Math.ceil(height / gridSize);
+            grid = new Array(cols * rows).fill(0).map(() => ({ ax: 0, ay: 0 }));
+            particles = [];
+            for(let i=0; i<config.particleCount; i++) particles.push(new Particle());
+        }
+
+        function addForce(x, y, dx, dy) {
+            const gx = Math.floor(x / gridSize);
+            const gy = Math.floor(y / gridSize);
+            const range = 2; // Influence radius
+
+            for(let i = -range; i <= range; i++) {
+                for(let j = -range; j <= range; j++) {
+                    const cx = gx + i; const cy = gy + j;
+                    if(cx >= 0 && cx < cols && cy >= 0 && cy < rows) {
+                        const cell = grid[cx + cy * cols];
+                        cell.ax += dx * 0.05;
+                        cell.ay += dy * 0.05;
+                    }
                 }
             }
+        }
+
+        // --- FRACTAL TREES (L-SYSTEM LOGIC) ---
+        let fractals = [];
+
+        class FractalTree {
+            constructor(x, y) {
+                this.x = x; this.y = y;
+                this.branches = [];
+                this.age = 0;
+                this.maxAge = 100;
+                this.color = `hsl(${Math.random()*60 + 40}, 100%, 70%)`; // Gold/Yellow
+                this.generate(x, y, -Math.PI/2, 80, config.fractalDepth);
+            }
+
+            generate(x, y, angle, len, depth) {
+                if(depth === 0) return;
+                
+                const endX = x + Math.cos(angle) * len;
+                const endY = y + Math.sin(angle) * len;
+                
+                this.branches.push({
+                    sx: x, sy: y, ex: endX, ey: endY,
+                    depth: depth,
+                    visible: false,
+                    delay: (config.fractalDepth - depth) * 5 // Staggered growth
+                });
+
+                // Recursive branching
+                const spread = 0.5 + Math.random() * 0.3;
+                this.generate(endX, endY, angle - spread, len * 0.7, depth - 1);
+                this.generate(endX, endY, angle + spread, len * 0.7, depth - 1);
+            }
+
+            update() {
+                this.age++;
+                this.branches.forEach(b => {
+                    if(this.age > b.delay) b.visible = true;
+                });
+            }
+
             draw() {
-                ctx.globalAlpha = this.life;
-                ctx.fillStyle = this.color;
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI*2);
-                ctx.fill();
+                ctx.strokeStyle = this.color;
+                ctx.lineCap = 'round';
+                
+                this.branches.forEach(b => {
+                    if(!b.visible) return;
+                    
+                    // Growth animation
+                    const progress = Math.min(1, (this.age - b.delay) / 20);
+                    const curX = b.sx + (b.ex - b.sx) * progress;
+                    const curY = b.sy + (b.ey - b.sy) * progress;
+
+                    ctx.lineWidth = b.depth * 0.5;
+                    ctx.globalAlpha = progress * (b.depth / config.fractalDepth) + 0.2;
+                    ctx.beginPath();
+                    ctx.moveTo(b.sx, b.sy);
+                    ctx.lineTo(curX, curY);
+                    ctx.stroke();
+
+                    // Glow at tips
+                    if(b.depth === 1 && progress > 0.9) {
+                        ctx.fillStyle = '#fff';
+                        ctx.beginPath();
+                        ctx.arc(curX, curY, 2, 0, Math.PI*2);
+                        ctx.fill();
+                    }
+                });
                 ctx.globalAlpha = 1.0;
             }
         }
 
-        class Bloom {
-            constructor(x, y) {
-                this.x = x;
-                this.y = y;
-                this.age = 0;
-                this.maxAge = 100;
-                this.petals = 6 + Math.floor(Math.random()*5);
-                this.color = `hsl(${Math.random()*60 + 160}, 80%, 70%)`; // Cyan to Green/Blue
-            }
-            draw() {
-                this.age++;
-                const scale = Math.min(1, this.age / 20); // Grow phase
-                const fade = Math.max(0, 1 - this.age / this.maxAge); // Fade phase
-                
-                ctx.save();
-                ctx.translate(this.x, this.y);
-                ctx.globalAlpha = fade;
-                ctx.fillStyle = this.color;
-                ctx.shadowBlur = 20 * fade;
-                ctx.shadowColor = this.color;
-
-                for(let i=0; i<this.petals; i++) {
-                    ctx.rotate((Math.PI * 2) / this.petals);
-                    ctx.beginPath();
-                    ctx.ellipse(0, -10 * scale, 5 * scale, 15 * scale, 0, 0, Math.PI*2);
-                    ctx.fill();
-                }
-                
-                // Center
-                ctx.fillStyle = '#fff';
-                ctx.beginPath();
-                ctx.arc(0, 0, 3 * scale, 0, Math.PI*2);
-                ctx.fill();
-                
-                ctx.restore();
+        function spawnFractal(x, y) {
+            if(fractals.length > 5) fractals.shift(); // Limit count
+            fractals.push(new FractalTree(x, y));
+            // Add explosive force to fluid
+            for(let i=0; i<360; i+=10) {
+                const rad = i * Math.PI / 180;
+                addForce(x, y, Math.cos(rad)*50, Math.sin(rad)*50);
             }
         }
 
-        function spawnBloom(x, y) {
-            sys.blooms.push(new Bloom(x, y));
-        }
+        // --- MAIN LOOP ---
+        let lastTime = 0;
+        function animate(time) {
+            // Calculate FPS
+            const dt = time - lastTime;
+            lastTime = time;
+            if(Math.random() > 0.95) document.getElementById('fps-counter').innerText = Math.round(1000/dt);
 
-        function initForest() {
-            sys.vines = [];
-            sys.particles = [];
-            // Background Vines (Darker)
-            for(let i=0; i<15; i++) {
-                sys.vines.push(new Vine(
-                    Math.random() * sys.width, 
-                    Math.random() * 15 + 10, 
-                    sys.height * 0.8, 
-                    '#064e3b'
-                ));
+            // Warp Charge Logic
+            if(cursor.down) {
+                config.colorShift += 2;
+                cursor.charge = Math.min(100, cursor.charge + 1);
+                // Shake effect
+                ctx.setTransform(1,0,0,1, (Math.random()-0.5)*cursor.charge*0.1, (Math.random()-0.5)*cursor.charge*0.1);
+            } else {
+                config.colorShift *= 0.95; // Decay
+                cursor.charge *= 0.9;
+                ctx.setTransform(1,0,0,1,0,0);
             }
-            // Foreground Vines (Lighter, translucent)
-            for(let i=0; i<8; i++) {
-                sys.vines.push(new Vine(
-                    Math.random() * sys.width, 
-                    Math.random() * 5 + 2, 
-                    sys.height * 0.6, 
-                    'rgba(16, 185, 129, 0.4)'
-                ));
+
+            // Fade Effect (Trails)
+            ctx.fillStyle = `rgba(1, 4, 9, ${0.2 - cursor.charge*0.001})`; // Dark void background
+            ctx.fillRect(0, 0, width, height);
+
+            // Update Fluid Grid (Decay)
+            for(let i=0; i<grid.length; i++) {
+                grid[i].ax *= config.fluidViscosity;
+                grid[i].ay *= config.fluidViscosity;
             }
-            // Init Ambient Particles
-            for(let i=0; i<50; i++) {
-                sys.particles.push(new Firefly());
-            }
-        }
 
-        /* === 3. RENDER LOOP === */
-        function animate() {
-            // Clear but keep trails slightly for motion blur effect
-            ctx.fillStyle = 'rgba(2, 18, 14, 0.3)';
-            ctx.fillRect(0, 0, sys.width, sys.height);
+            // Render Systems
+            ctx.globalCompositeOperation = 'screen'; // Additive Blending for Magic Glow
+            
+            particles.forEach(p => { p.update(); p.draw(); });
+            
+            // Render Fractals
+            fractals.forEach(f => { f.update(); f.draw(); });
 
-            // Draw Vines
-            sys.vines.forEach(v => { v.update(); v.draw(); });
-
-            // Draw Blooms
-            sys.blooms = sys.blooms.filter(b => b.age < b.maxAge);
-            sys.blooms.forEach(b => b.draw());
-
-            // Draw Particles
-            if(Math.random() < 0.05) sys.particles.push(new Firefly()); // Continual spawn
-            sys.particles = sys.particles.filter(p => p.life > 0);
-            sys.particles.forEach(p => { p.update(); p.draw(); });
-
-            sys.time++;
+            // Post-processing Glow (Pseudo)
+            // Note: True Gaussian blur is too heavy, simulating with layered circles or just alpha blending
+            
+            ctx.globalCompositeOperation = 'source-over'; // Reset
             requestAnimationFrame(animate);
         }
 
-        /* === 4. SLIDER LOGIC === */
-        function nextSlide() {
-            // Transition Effect
-            const flash = document.getElementById('flash');
-            flash.classList.add('flash');
-            
-            setTimeout(() => {
-                sys.slides[sys.currentSlide].classList.remove('active');
-                sys.dots[sys.currentSlide].classList.remove('active');
-                
-                sys.currentSlide = (sys.currentSlide + 1) % sys.slides.length;
-                
-                sys.slides[sys.currentSlide].classList.add('active');
-                sys.dots[sys.currentSlide].classList.add('active');
-                
-                // Spawn particles on transition
-                for(let i=0; i<20; i++) sys.particles.push(new Firefly(sys.width/2, sys.height/2, true));
-                
-                setTimeout(() => { flash.classList.remove('flash'); }, 500);
-            }, 500);
-        }
-        
-        sys.reset = () => {
-             // Reset to start logic
-             location.reload(); 
-        };
+        // --- BUTTON ACTIONS ---
+        function startCharge() { cursor.down = true; document.body.classList.add('active-hold'); }
+        function endCharge() { cursor.down = false; document.body.classList.remove('active-hold'); }
 
-        // Initialize
+        // Start
         resize();
-        animate();
+        initFluid();
+        animate(0);
 
     </script>
 </body>
