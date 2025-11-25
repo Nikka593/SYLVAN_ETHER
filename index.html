@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SYLVAN ETHER | The Living Archive</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Cormorant+Garamond:ital,wght@0,300;0,600;1,400&family=Zen+Old+Mincho:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        /* === CORE AESTHETICS === */
+        :root {
+            --deep-forest: #02120e;
+            --moss-dark: #064e3b;
+            --moss-light: #10b981;
+            --spirit-gold: #fbbf24;
+            --ether-blue: #a5f3fc;
+            --f-header: 'Cinzel Decorative', serif;
+            --f-body: 'Cormorant Garamond', serif;
+            --f-jp: 'Zen Old Mincho', serif;
+        }
+
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            background-color: var(--deep-forest);
+            color: #e2e8f0;
+            font-family: var(--f-jp);
+            overflow: hidden; /* 世界観を壊さないようスクロールバーを隠す */
+            cursor: none; /* OSカーソルを消去 */
+        }
+
+        /* === CANVAS LAYERS === */
+        #world-canvas {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 1; pointer-events: none;
+            filter: blur(0.5px) contrast(1.2);
+        }
+        
+        /* 闇のレイヤー（カーソルで晴れる） */
+        #shadow-layer {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 5; pointer-events: none;
+            background: radial-gradient(circle at var(--x) var(--y), transparent 100px, rgba(2, 18, 14, 0.95) 400px);
+            transition: background 0.1s ease-out;
+            mix-blend-mode: multiply;
+        }
+
+        /* === UI OVERLAY === */
+        #ui-layer {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 10; pointer-events: none;
+            perspective: 1000px;
+        }
+
+        /* === CURSOR (THE WISP) === */
+        .wisp-cursor {
+            position: fixed; top: 0; left: 0; width: 20px; height: 20px;
+            z-index: 9999; pointer-events: none;
+            transform: translate(-50%, -50%);
+            mix-blend-mode: screen;
+        }
+        .wisp-core {
+            position: absolute; width: 100%; height: 100%;
+            background: radial-gradient(circle, #fff, var(--ether-blue) 40%, transparent 70%);
+            border-radius: 50%;
+            filter: blur(2px);
+            animation: breathe 3s infinite ease-in-out;
+        }
+        .wisp-trail {
+            position: absolute; top: 50%; left: 50%;
+            width: 100px; height: 100px;
+            background: radial-gradient(circle, rgba(165, 243, 252, 0.2), transparent 60%);
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            filter: blur(10px);
+        }
+
+        /* === CONTENT CARDS (STONE TABLETS) === */
+        .tablet-container {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80vw; max-width: 1000px; height: 70vh;
+            display: flex; justify-content: center; align-items: center;
+            pointer-events: none; /* コンテンツ切替時のみ有効化 */
+        }
+
+        .ancient-tablet {
+            position: absolute;
+            width: 100%; height: 100%;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 2px;
+            padding: 60px;
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+            
+            opacity: 0; transform: scale(0.9) translateY(20px);
+            transition: all 1s cubic-bezier(0.16, 1, 0.3, 1);
+            pointer-events: auto;
+            
+            display: grid; grid-template-columns: 1fr 1fr; gap: 40px;
+        }
+        
+        .ancient-tablet.active {
+            opacity: 1; transform: scale(1) translateY(0);
+            z-index: 20;
+        }
+        
+        /* 魔法的なボーダーエフェクト */
+        .ancient-tablet::before {
+            content: ''; position: absolute; top: -1px; left: -1px; right: -1px; bottom: -1px;
+            border-radius: 2px; padding: 1px;
+            background: linear-gradient(45deg, transparent, var(--moss-light), transparent);
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            opacity: 0.5;
+        }
+
+        /* === TYPOGRAPHY === */
+        h1 {
+            font-family: var(--f-header); font-size: 4rem;
+            background: linear-gradient(to bottom, #fff, var(--ether-blue));
+            -webkit-background-clip: text; color: transparent;
+            margin-bottom: 1rem;
+            filter: drop-shadow(0 0 10px rgba(165, 243, 252, 0.5));
+        }
+        h2 { font-family: var(--f-body); font-style: italic; font-size: 1.5rem; color: var(--spirit-gold); margin-bottom: 2rem; letter-spacing: 2px; }
+        p { font-size: 1.1rem; line-height: 1.8; color: #cbd5e1; text-shadow: 0 2px 4px rgba(0,0,0,0.8); margin-bottom: 1.5rem; }
+
+        .rune-text {
+            font-family: var(--f-header); opacity: 0.1; font-size: 8rem;
+            position: absolute; top: -20px; left: -20px; pointer-events: none;
+            color: var(--ether-blue);
+        }
+
+        /* === INTERACTIVE ELEMENTS === */
+        .spirit-btn {
+            font-family: var(--f-header);
+            font-size: 1.2rem;
+            color: var(--ether-blue);
+            border: 1px solid rgba(165, 243, 252, 0.3);
+            padding: 15px 40px;
+            background: transparent;
+            cursor: none; /* JSでカーソル追従させるため */
+            transition: all 0.3s;
+            position: relative; overflow: hidden;
+            letter-spacing: 3px;
+        }
+        .spirit-btn::after {
+            content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+        .spirit-btn:hover {
+            border-color: var(--ether-blue);
+            box-shadow: 0 0 20px rgba(165, 243, 252, 0.3);
+            background: rgba(165, 243, 252, 0.05);
+            text-shadow: 0 0 8px var(--ether-blue);
+        }
+        .spirit-btn:hover::after { left: 100%; }
+
+        /* === ANIMATIONS === */
+        @keyframes breathe {
+            0%, 100% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.1); opacity: 1; }
+        }
+        
+        .fade-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #fff; z-index: 99999;
+            pointer-events: none; opacity: 0;
+            transition: opacity 1s;
+        }
+        .fade-overlay.flash { opacity: 1; }
+
+        /* ナビゲーションドット */
+        .nav-dots {
+            position: fixed; right: 40px; top: 50%; transform: translateY(-50%);
+            display: flex; flex-direction: column; gap: 20px; z-index: 50;
+        }
+        .dot {
+            width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.2);
+            transition: all 0.3s;
+        }
+        .dot.active { background: var(--ether-blue); box-shadow: 0 0 10px var(--ether-blue); transform: scale(1.5); }
+
+    </style>
+</head>
+<body>
+
+    <!-- Canvas World -->
+    <canvas id="world-canvas"></canvas>
+    <div id="shadow-layer"></div>
+
+    <!-- The Wisp (Cursor) -->
+    <div class="wisp-cursor" id="wisp">
+        <div class="wisp-core"></div>
+        <div class="wisp-trail"></div>
+    </div>
+
+    <!-- Flash Effect for Transitions -->
+    <div class="fade-overlay" id="flash"></div>
+
+    <!-- UI Overlay -->
+    <div id="ui-layer">
+        
+        <!-- Navigation Dots -->
+        <div class="nav-dots">
+            <div class="dot active" data-idx="0"></div>
+            <div class="dot" data-idx="1"></div>
+            <div class="dot" data-idx="2"></div>
+        </div>
+
+        <!-- Content Area -->
+        <div class="tablet-container">
+            
+            <!-- SECTION 1: THE AWAKENING -->
+            <div class="ancient-tablet active" id="slide-0">
+                <div class="rune-text">ORIGIN</div>
+                <div style="z-index: 2; display: flex; flex-direction: column; justify-content: center;">
+                    <h2>The Beginning</h2>
+                    <h1>SYLVAN ETHER</h1>
+                    <p>
+                        ようこそ、忘れられた記憶の森へ。<br>
+                        ここでは、あなたの「観測」だけが世界を定義します。<br>
+                        マウス（ウィスプ）を動かし、闇に隠された真実を照らし出してください。
+                    </p>
+                    <p>
+                        この空間は生きています。クリックすれば生命が芽吹き、<br>
+                        静止すれば森は呼吸を始めます。
+                    </p>
+                    <div style="margin-top: 30px;">
+                        <button class="spirit-btn" onclick="nextSlide()">ENTER THE WOODS</button>
+                    </div>
+                </div>
+                <!-- Right side: Visual placeholder (handled by canvas mostly, but adding a glass pane) -->
+                <div style="border-left: 1px solid rgba(255,255,255,0.1); padding-left: 40px; display: flex; align-items: center; justify-content: center; position: relative;">
+                    <div style="text-align: center; opacity: 0.8;">
+                        <div style="font-family: var(--f-header); font-size: 5rem; line-height: 1; color: var(--spirit-gold); text-shadow: 0 0 20px var(--spirit-gold);">01</div>
+                        <div style="font-family: var(--f-body); letter-spacing: 5px;">GENESIS</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 2: THE ECOSYSTEM -->
+            <div class="ancient-tablet" id="slide-1">
+                <div class="rune-text">LIFE</div>
+                <div style="z-index: 2; display: flex; flex-direction: column; justify-content: center;">
+                    <h2>Concept</h2>
+                    <h1>PROCEDURAL LIFE</h1>
+                    <p>
+                        このウェブサイトの背景にある植物は、<br>
+                        プリレンダリングされた画像ではなく、<br>
+                        コードによってリアルタイムに成長しています。
+                    </p>
+                    <p>
+                        <strong style="color:var(--moss-light)">[Luminescence]</strong><br>
+                        光合成の逆説。光を与えることで、情報は可視化されます。<br>
+                        画面上のあらゆる場所をクリックしてみてください。
+                    </p>
+                    <div style="margin-top: 30px;">
+                        <button class="spirit-btn" onclick="nextSlide()">GO DEEPER</button>
+                    </div>
+                </div>
+                <div style="border-left: 1px solid rgba(255,255,255,0.1); padding-left: 40px; display: flex; align-items: center; justify-content: center;">
+                    <div style="text-align: center; opacity: 0.8;">
+                        <div style="font-family: var(--f-header); font-size: 5rem; line-height: 1; color: var(--ether-blue); text-shadow: 0 0 20px var(--ether-blue);">02</div>
+                        <div style="font-family: var(--f-body); letter-spacing: 5px;">GROWTH</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 3: THE ETHER -->
+            <div class="ancient-tablet" id="slide-2">
+                <div class="rune-text">VOID</div>
+                <div style="z-index: 2; display: flex; flex-direction: column; justify-content: center;">
+                    <h2>Finality</h2>
+                    <h1>ETHEREAL NEXUS</h1>
+                    <p>
+                        森を抜けた先には、無限の可能性が広がっています。<br>
+                        デザイン、テクノロジー、そして自然の融合。<br>
+                        これが我々の提示する「次世代の没入体験」です。
+                    </p>
+                    <p>
+                        ここから先は、あなた自身の物語を紡いでください。
+                    </p>
+                    <div style="margin-top: 30px;">
+                        <button class="spirit-btn" onclick="sys.reset()">REINCARNATE</button>
+                    </div>
+                </div>
+                <div style="border-left: 1px solid rgba(255,255,255,0.1); padding-left: 40px; display: flex; align-items: center; justify-content: center;">
+                    <div style="text-align: center; opacity: 0.8;">
+                        <div style="font-family: var(--f-header); font-size: 5rem; line-height: 1; color: #fff; text-shadow: 0 0 20px #fff;">03</div>
+                        <div style="font-family: var(--f-body); letter-spacing: 5px;">INFINITE</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- AUDIO HINT (Visual only) -->
+    <div style="position: fixed; bottom: 30px; left: 30px; font-family: var(--f-tech); font-size: 0.7rem; color: rgba(255,255,255,0.3); letter-spacing: 2px;">
+        IMMERSIVE EXPERIENCE v2.0 // AUDIO: IMAGINED
+    </div>
+
+    <script>
+        /* === SYSTEM CORE === */
+        const sys = {
+            width: window.innerWidth,
+            height: window.innerHeight,
+            mouseX: window.innerWidth / 2,
+            mouseY: window.innerHeight / 2,
+            currentSlide: 0,
+            slides: document.querySelectorAll('.ancient-tablet'),
+            dots: document.querySelectorAll('.dot'),
+            time: 0,
+            
+            // World Entities
+            vines: [],
+            particles: [],
+            blooms: []
+        };
+
+        const canvas = document.getElementById('world-canvas');
+        const ctx = canvas.getContext('2d');
+        const wisp = document.getElementById('wisp');
+        const shadowLayer = document.getElementById('shadow-layer');
+
+        /* === 1. THE WISP (CURSOR LOGIC) === */
+        document.addEventListener('mousemove', (e) => {
+            sys.mouseX = e.clientX;
+            sys.mouseY = e.clientY;
+            
+            // Move custom cursor
+            wisp.style.left = e.clientX + 'px';
+            wisp.style.top = e.clientY + 'px';
+            
+            // Update shadow spotlight
+            document.documentElement.style.setProperty('--x', e.clientX + 'px');
+            document.documentElement.style.setProperty('--y', e.clientY + 'px');
+        });
+
+        document.addEventListener('mousedown', (e) => {
+            spawnBloom(e.clientX, e.clientY);
+            // Ripple effect on click
+            for(let i=0; i<5; i++) {
+                sys.particles.push(new Firefly(e.clientX, e.clientY, true));
+            }
+        });
+
+        /* === 2. GENERATIVE NATURE (CANVAS) === */
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            sys.width = canvas.width;
+            sys.height = canvas.height;
+            initForest();
+        }
+        window.addEventListener('resize', resize);
+
+        class Vine {
+            constructor(x, width, length, color) {
+                this.rootX = x;
+                this.rootY = sys.height + 20; // Bottom of screen
+                this.width = width;
+                this.length = length;
+                this.segments = 15;
+                this.color = color;
+                this.angle = Math.random() * Math.PI;
+                this.speed = 0.002 + Math.random() * 0.003;
+                this.nodes = [];
+                
+                // Initialize nodes
+                let currentX = this.rootX;
+                let currentY = this.rootY;
+                for (let i = 0; i < this.segments; i++) {
+                    this.nodes.push({ x: currentX, y: currentY, baseAng: Math.random() * 0.5 - 0.25 });
+                    currentY -= this.length / this.segments;
+                    // Random curve
+                    currentX += (Math.random() - 0.5) * 20; 
+                }
+            }
+
+            update() {
+                this.angle += this.speed;
+                
+                // Interactive Sway: Mouse influence
+                const dx = sys.mouseX - this.rootX;
+                const influence = Math.max(-50, Math.min(50, dx / 10)); // Clamp influence
+
+                // Calculate sway for each node
+                for (let i = 1; i < this.segments; i++) {
+                    // Wind + Mouse interaction
+                    const wind = Math.sin(this.angle + i * 0.2) * (i * 2);
+                    const mousePush = (1 - Math.abs(dx)/sys.width) * influence * (i * 0.5); 
+                    
+                    // Simple spring-like movement
+                    this.nodes[i].x = this.rootX + wind - mousePush + (Math.sin(i)*20);
+                }
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.moveTo(this.nodes[0].x, this.nodes[0].y);
+                
+                // Quadratic bezier curve through nodes
+                for (let i = 1; i < this.segments - 1; i++) {
+                    const xc = (this.nodes[i].x + this.nodes[i+1].x) / 2;
+                    const yc = (this.nodes[i].y + this.nodes[i+1].y) / 2;
+                    ctx.quadraticCurveTo(this.nodes[i].x, this.nodes[i].y, xc, yc);
+                }
+                
+                // Tip
+                ctx.quadraticCurveTo(
+                    this.nodes[this.segments-1].x, 
+                    this.nodes[this.segments-1].y, 
+                    this.nodes[this.segments-1].x, 
+                    this.nodes[this.segments-1].y
+                );
+
+                ctx.strokeStyle = this.color;
+                ctx.lineWidth = this.width;
+                ctx.lineCap = 'round';
+                ctx.stroke();
+
+                // Glow
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = this.color;
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+            }
+        }
+
+        class Firefly {
+            constructor(x, y, isSpark = false) {
+                this.x = x || Math.random() * sys.width;
+                this.y = y || Math.random() * sys.height;
+                this.vx = (Math.random() - 0.5) * (isSpark ? 10 : 2);
+                this.vy = (Math.random() - 0.5) * (isSpark ? 10 : 2);
+                this.size = Math.random() * 3;
+                this.life = 1.0;
+                this.decay = isSpark ? 0.02 : 0.005;
+                this.color = isSpark ? '#fbbf24' : '#a5f3fc'; // Gold or Blue
+            }
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.life -= this.decay;
+                
+                // Interactive: Flee from cursor
+                const dx = this.x - sys.mouseX;
+                const dy = this.y - sys.mouseY;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                if(dist < 150) {
+                    this.vx += dx * 0.001;
+                    this.vy += dy * 0.001;
+                }
+            }
+            draw() {
+                ctx.globalAlpha = this.life;
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI*2);
+                ctx.fill();
+                ctx.globalAlpha = 1.0;
+            }
+        }
+
+        class Bloom {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.age = 0;
+                this.maxAge = 100;
+                this.petals = 6 + Math.floor(Math.random()*5);
+                this.color = `hsl(${Math.random()*60 + 160}, 80%, 70%)`; // Cyan to Green/Blue
+            }
+            draw() {
+                this.age++;
+                const scale = Math.min(1, this.age / 20); // Grow phase
+                const fade = Math.max(0, 1 - this.age / this.maxAge); // Fade phase
+                
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.globalAlpha = fade;
+                ctx.fillStyle = this.color;
+                ctx.shadowBlur = 20 * fade;
+                ctx.shadowColor = this.color;
+
+                for(let i=0; i<this.petals; i++) {
+                    ctx.rotate((Math.PI * 2) / this.petals);
+                    ctx.beginPath();
+                    ctx.ellipse(0, -10 * scale, 5 * scale, 15 * scale, 0, 0, Math.PI*2);
+                    ctx.fill();
+                }
+                
+                // Center
+                ctx.fillStyle = '#fff';
+                ctx.beginPath();
+                ctx.arc(0, 0, 3 * scale, 0, Math.PI*2);
+                ctx.fill();
+                
+                ctx.restore();
+            }
+        }
+
+        function spawnBloom(x, y) {
+            sys.blooms.push(new Bloom(x, y));
+        }
+
+        function initForest() {
+            sys.vines = [];
+            sys.particles = [];
+            // Background Vines (Darker)
+            for(let i=0; i<15; i++) {
+                sys.vines.push(new Vine(
+                    Math.random() * sys.width, 
+                    Math.random() * 15 + 10, 
+                    sys.height * 0.8, 
+                    '#064e3b'
+                ));
+            }
+            // Foreground Vines (Lighter, translucent)
+            for(let i=0; i<8; i++) {
+                sys.vines.push(new Vine(
+                    Math.random() * sys.width, 
+                    Math.random() * 5 + 2, 
+                    sys.height * 0.6, 
+                    'rgba(16, 185, 129, 0.4)'
+                ));
+            }
+            // Init Ambient Particles
+            for(let i=0; i<50; i++) {
+                sys.particles.push(new Firefly());
+            }
+        }
+
+        /* === 3. RENDER LOOP === */
+        function animate() {
+            // Clear but keep trails slightly for motion blur effect
+            ctx.fillStyle = 'rgba(2, 18, 14, 0.3)';
+            ctx.fillRect(0, 0, sys.width, sys.height);
+
+            // Draw Vines
+            sys.vines.forEach(v => { v.update(); v.draw(); });
+
+            // Draw Blooms
+            sys.blooms = sys.blooms.filter(b => b.age < b.maxAge);
+            sys.blooms.forEach(b => b.draw());
+
+            // Draw Particles
+            if(Math.random() < 0.05) sys.particles.push(new Firefly()); // Continual spawn
+            sys.particles = sys.particles.filter(p => p.life > 0);
+            sys.particles.forEach(p => { p.update(); p.draw(); });
+
+            sys.time++;
+            requestAnimationFrame(animate);
+        }
+
+        /* === 4. SLIDER LOGIC === */
+        function nextSlide() {
+            // Transition Effect
+            const flash = document.getElementById('flash');
+            flash.classList.add('flash');
+            
+            setTimeout(() => {
+                sys.slides[sys.currentSlide].classList.remove('active');
+                sys.dots[sys.currentSlide].classList.remove('active');
+                
+                sys.currentSlide = (sys.currentSlide + 1) % sys.slides.length;
+                
+                sys.slides[sys.currentSlide].classList.add('active');
+                sys.dots[sys.currentSlide].classList.add('active');
+                
+                // Spawn particles on transition
+                for(let i=0; i<20; i++) sys.particles.push(new Firefly(sys.width/2, sys.height/2, true));
+                
+                setTimeout(() => { flash.classList.remove('flash'); }, 500);
+            }, 500);
+        }
+        
+        sys.reset = () => {
+             // Reset to start logic
+             location.reload(); 
+        };
+
+        // Initialize
+        resize();
+        animate();
+
+    </script>
+</body>
+</html>
